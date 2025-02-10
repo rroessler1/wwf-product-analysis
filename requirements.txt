@@ -1,0 +1,13 @@
+gdown==5.2.0
+jupyterlab==4.3.0
+natsort==8.4.0
+openai==1.55.3
+openpyxl==3.1.5
+pandas==2.2.3
+Pillow==11.0.0
+protobuf==5.28.3
+pydantic==2.9.2
+pypdfium2==4.30.0
+PyPDF2==3.0.1
+streamlit==1.40.1
+tenacity==9.0.0

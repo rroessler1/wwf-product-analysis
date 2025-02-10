@@ -1,3 +1,10 @@
+# Our files
+openai_api_key.*
+pdf-files/
+# Ignore all .vscode file except the communal settings.
+.vscode/*
+!.vscode/settings.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
