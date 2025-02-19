@@ -1,6 +1,7 @@
 import os
 import time
 
+import argparse
 from datetime import datetime
 from natsort import natsorted
 import pandas as pd
@@ -35,16 +36,27 @@ def append_metadata(df: pd.DataFrame):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Runs the main script to download PDFs, split them, and write the "
+        "results."
+    )
+    parser.add_argument(
+        "--overwrite-results",
+        action="store_true",  # Makes it a flag (True if provided, False if not)
+        help="Overwrite existing results if they exist.",
+    )
+    args = parser.parse_args()
+
     api_key = load_api_key(API_KEY_PATH)
     leaflet_reader = LeafletReader(download_url=URL)
     openai_client = MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=api_key)
-    result_saver = ResultSaver()
+    result_saver = ResultSaver(overwrite_results=args.overwrite_results)
     categorizer = ProductCategorizer()
 
     if DO_DOWNLOAD:
         leaflet_reader.download_leaflets(PDF_DIR)
 
-    if result_saver.results_exist(PDF_DIR):
+    if result_saver.results_exist_and_should_be_kept(PDF_DIR):
         print(
             f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do."
         )
@@ -58,7 +70,7 @@ def main():
             pdf_path = os.path.join(PDF_DIR, filename)
             pdf_name, _ = os.path.splitext(os.path.basename(filename))
             output_dir = os.path.join(PDF_DIR, pdf_name)
-            if result_saver.results_exist(output_dir):
+            if result_saver.results_exist_and_should_be_kept(PDF_DIR):
                 print(f"Already have results for {filename}, skipping...")
                 continue
             print(f"Processing {pdf_path}.")
@@ -93,7 +105,7 @@ def process_directory(
     result_saver,
     displaymood=False,
 ):
-    if result_saver.results_exist(output_dir):
+    if result_saver.results_exist_and_should_be_kept(PDF_DIR):
         if displaymood:
             st.write(f"Results already exist for {directory}, skipping...")
         else:
