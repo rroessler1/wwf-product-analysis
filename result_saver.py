@@ -5,8 +5,9 @@ import pandas as pd
 
 
 class ResultSaver:
-    def __init__(self):
+    def __init__(self, overwrite_results: bool = False):
         self.output_file_name = "results.xlsx"
+        self.overwrite_results = overwrite_results
 
     def results_exist(self, output_dir: str) -> bool:
         results_path = os.path.join(output_dir, self.output_file_name)
@@ -31,6 +32,13 @@ class ResultSaver:
         csv_file_path = os.path.join(output_dir, "results.csv")
         categorized_df.to_csv(csv_file_path, index=False)
         return excel_file_path
+
+    def results_exist_and_should_be_kept(self, results_directory: str):
+        """
+        True if the results already exist in the specified directory and they should
+        not be overwritten.
+        """
+        return not self.overwrite_results and self.results_exist(results_directory)
 
     def combine_results_from_all_subdirectories(
         self, parent_directory: str
