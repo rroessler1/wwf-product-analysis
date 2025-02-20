@@ -1,5 +1,6 @@
 # Our files
 openai_api_key.*
+set_openai_api_key.*
 pdf-files/
 # Ignore all .vscode file except the communal settings.
 .vscode/*

@@ -1,4 +1,4 @@
-API_KEY_PATH = "openai_api_key.txt"
+API_KEY_ENV_VAR_NAME = "OPENAI_API_KEY"
 EXTRACTED_DATA_COLUMNS = [
     "product_name",
     "original_price",

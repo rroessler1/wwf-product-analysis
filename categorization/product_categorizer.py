@@ -4,6 +4,7 @@ import pandas as pd
 
 from llms.models import ProductCategory, FinalProductCategory
 from llms.openai_client import OpenAIClient
+from utils import get_api_key
 
 
 class ProductCategorizer:
@@ -99,11 +100,7 @@ def main():
     test_data = data.iloc[:5].reset_index(drop=True)
     PC = ProductCategorizer()
 
-    api_key_path = "openai_api_key.txt"
-    with open(api_key_path, "r") as file:
-        api_key = file.readline().strip()
-
-    openai_client = OpenAIClient(api_key=api_key)
+    openai_client = OpenAIClient(api_key=get_api_key())
 
     cat_data = PC.categorize_products(test_data, openai_client)
     cat_data.to_csv("test_LLM/prompt_tuning_results344.csv")

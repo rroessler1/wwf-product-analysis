@@ -13,21 +13,16 @@ from llms.openai_client import OpenAIClient
 from llms.mock_client import MockLLM
 from result_saver import ResultSaver
 from settings import NUMBER_OF_CHATGPT_VALIDATIONS
+from utils import get_api_key
 from validation.validation_comparison import compare_validation
 
 
 PDF_DIR = "pdf-files"
-API_KEY_PATH = "openai_api_key.txt"
 URL = "https://drive.google.com/drive/folders/1AR2_592V_x4EF97FHv4UPN5zdLTXpVB3"
 DO_DOWNLOAD = False  # just used for testing, saves time
 DO_CATEGORIZE = True
 USE_TEST_LLM_CLIENT = True
 SLEEP_TIME = 0  # TODO: test that we're not being rate limited using their API key
-
-
-def load_api_key(api_key_path: str) -> str:
-    with open(api_key_path, "r") as file:
-        return file.readline().strip()
 
 
 def append_metadata(df: pd.DataFrame):
@@ -47,9 +42,10 @@ def main():
     )
     args = parser.parse_args()
 
-    api_key = load_api_key(API_KEY_PATH)
     leaflet_reader = LeafletReader(download_url=URL)
-    openai_client = MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=api_key)
+    openai_client = (
+        MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=get_api_key())
+    )
     result_saver = ResultSaver(overwrite_results=args.overwrite_results)
     categorizer = ProductCategorizer()
 
