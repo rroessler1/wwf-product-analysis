@@ -30,7 +30,7 @@ push_to_azure() {
     az containerapp create \
       --name $CONTAINER_APP_NAME \
       --resource-group $RESOURCE_GROUP \
-      --image $DOCKER_USERNAME/$DOCKER_REPO_NAME:$DOCKER_TAG \
+      --image $1/$DOCKER_REPO_NAME:$DOCKER_TAG \
       --ingress external \
       --environment $ENVIRONMENT
 
@@ -54,10 +54,7 @@ check_azure_cli_installed() {
     fi
 }
 
-get_docker_username() {
-    read -p "Enter your Docker Hub username: " DOCKER_USERNAME
-    echo "$DOCKER_USERNAME"
-}
+read -p "Enter your Docker Hub username: " DOCKER_USERNAME
 
 # Display menu options
 echo "Choose an option:"
@@ -69,18 +66,16 @@ read -p "Enter your choice (1/2/3): " choice
 
 case $choice in
     1)
-	username=$(get_docker_username)
-	push_to_docker $username
+        push_to_docker $DOCKER_USERNAME
         ;;
     2)
-	check_azure_cli_installed
-        push_to_azure
+        check_azure_cli_installed
+        push_to_azure $DOCKER_USERNAME
         ;;
     3)
-	check_azure_cli_installed
-	username=$(get_docker_username)
-	push_to_docker $username
-        push_to_azure
+        check_azure_cli_installed
+        push_to_docker $DOCKER_USERNAME
+        push_to_azure $DOCKER_USERNAME
         ;;
     *)
         echo "Invalid choice. Exiting."
