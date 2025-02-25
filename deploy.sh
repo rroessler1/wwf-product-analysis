@@ -32,6 +32,8 @@ push_to_azure() {
       --resource-group $RESOURCE_GROUP \
       --image $1/$DOCKER_REPO_NAME:$DOCKER_TAG \
       --ingress external \
+      --secrets "openai-api-key=${OPENAI_API_KEY}" \
+      --env-vars OPENAI_API_KEY=secretref:openai-api-key \
       --environment $ENVIRONMENT
 
     echo "Deployment to Azure completed!"
@@ -54,6 +56,18 @@ check_azure_cli_installed() {
     fi
 }
 
+check_api_key_available() {
+    if [[ -z "$OPENAI_API_KEY" ]]; then
+        echo "Error: OPENAI_API_KEY must be set as an environment variable so we can push it to Azure." >&2
+        exit 1
+fi
+}
+
+run_azure_prereqs() {
+    check_azure_cli_installed
+    check_api_key_available
+}
+
 read -p "Enter your Docker Hub username: " DOCKER_USERNAME
 
 # Display menu options
@@ -69,11 +83,11 @@ case $choice in
         push_to_docker $DOCKER_USERNAME
         ;;
     2)
-        check_azure_cli_installed
+        run_azure_prereqs
         push_to_azure $DOCKER_USERNAME
         ;;
     3)
-        check_azure_cli_installed
+        run_azure_prereqs
         push_to_docker $DOCKER_USERNAME
         push_to_azure $DOCKER_USERNAME
         ;;
