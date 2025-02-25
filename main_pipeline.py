@@ -30,36 +30,36 @@ def append_metadata(df: pd.DataFrame):
     df["calendar_week"] = datetime.now().isocalendar().week
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Runs the main script to download PDFs, split them, and write the "
-        "results."
+        description="Runs the main script to download PDFs, split them, and write the results."
     )
     parser.add_argument(
         "--overwrite-results",
-        action="store_true",  # Makes it a flag (True if provided, False if not)
-        help="Overwrite existing results if they exist.",
+        action="store_true",
+        help="Overwrite existing results if they exist."
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def initialize_components(args):
     leaflet_reader = LeafletReader(download_url=URL)
-    openai_client = (
-        MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=get_api_key())
-    )
+    openai_client = MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=get_api_key())
     result_saver = ResultSaver(overwrite_results=args.overwrite_results)
     categorizer = ProductCategorizer()
+    return leaflet_reader, openai_client, result_saver, categorizer
 
+
+def download_pdfs(leaflet_reader):
     if DO_DOWNLOAD:
         leaflet_reader.download_leaflets(PDF_DIR)
 
+
+def process_pdfs(leaflet_reader, result_saver):
     if result_saver.results_exist_and_should_be_kept(PDF_DIR):
-        print(
-            f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do."
-        )
-        print(
-            "If you'd like new results, delete or rename the results file and rerun the script."
-        )
-        return
+        print(f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do.")
+        print("If you'd like new results, delete or rename the results file and rerun the script.")
+        return False
 
     for filename in os.listdir(PDF_DIR):
         if filename.endswith(".pdf"):
@@ -71,18 +71,27 @@ def main():
                 continue
             print(f"Processing {pdf_path}.")
             leaflet_reader.convert_pdf_to_images(pdf_path, output_dir)
+    return True
 
+
+def process_all_directories(openai_client, categorizer, result_saver):
     all_directories = [entry.path for entry in os.scandir(PDF_DIR) if entry.is_dir()]
     for directory in all_directories:
-        process_directory(
-            directory, directory, openai_client, categorizer, result_saver
-        )
+        process_directory(directory, directory, openai_client, categorizer, result_saver)
 
-    combined_results = result_saver.combine_results_from_all_subdirectories(PDF_DIR)
-    combined_results_filename = result_saver.save(combined_results, PDF_DIR)
-    print(
-        f"Combined results from all files in {PDF_DIR} saved at: {combined_results_filename}"
-    )
+
+def save_results(result_saver):
+    result_saver.save_results(PDF_DIR)
+
+
+def main():
+    args = parse_arguments()
+    leaflet_reader, openai_client, result_saver, categorizer = initialize_components(args)
+
+    download_pdfs(leaflet_reader)
+    if process_pdfs(leaflet_reader, result_saver):
+        process_all_directories(openai_client, categorizer, result_saver)
+        save_results(result_saver)
 
 
 def get_all_image_paths(directory: str):

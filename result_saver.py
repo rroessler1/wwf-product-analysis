@@ -9,6 +9,14 @@ class ResultSaver:
         self.output_file_name = "results.xlsx"
         self.overwrite_results = overwrite_results
 
+    def save_results(self, output_dir: str) -> pd.DataFrame:
+        combined_results = self.combine_results_from_all_subdirectories(output_dir)
+        combined_results_filename = self.save(combined_results, output_dir)
+        print(
+            f"Combined results from all files in {output_dir} saved at: {combined_results_filename}"
+        )
+        return combined_results
+
     def results_exist(self, output_dir: str) -> bool:
         results_path = os.path.join(output_dir, self.output_file_name)
         return os.path.exists(results_path) and os.path.getsize(results_path) > 0
