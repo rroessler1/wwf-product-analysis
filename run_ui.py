@@ -1,30 +1,21 @@
 import streamlit as st
 import os
 import pandas as pd
-from main_pipeline import URL, PDF_DIR, parse_arguments, initialize_components, download_pdfs, \
-    process_pdfs, process_all_directories, save_results
-from result_saver import ResultSaver
+
+import settings
+from main_pipeline import URL, PDF_DIR, main
 
 
 def run_pipeline():
     st.write("Processing started...")
-    args = parse_arguments()
-    leaflet_reader, openai_client, result_saver, categorizer = initialize_components(args)
-
-    download_pdfs(leaflet_reader)
-    if process_pdfs(leaflet_reader, result_saver):
-        process_all_directories(openai_client, categorizer, result_saver)
-        st.session_state["results"] = save_results(result_saver)
+    st.session_state["results"] = main(display_mode=True)
     st.write("Processing finished")
 
 
 # Streamlit UI
-st.logo(
-    'WWF_Logo.svg.png',
-    size="Large"
-)
-st.title("BBQ GPT")
-st.write("This tool processes supermarket leaflets and extracts all products with a categorization if they are grillable or not.")
+st.logo("WWF_Logo.svg.png", size="Large")
+st.title(settings.UI_TITLE)
+st.write(settings.UI_SUBTITLE)
 
 st.write(f"Pdfs are taken from {URL}")
 
@@ -42,5 +33,5 @@ if "results" in st.session_state:
                 label="Download Results",
                 data=f,
                 file_name="processed_results.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
