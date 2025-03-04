@@ -3,6 +3,7 @@ import os
 import pandas as pd
 
 import settings
+from ui import texts
 from main_pipeline import URL, PDF_DIR, main
 
 
@@ -13,9 +14,9 @@ def run_pipeline():
 
 
 # Streamlit UI
-st.logo("WWF_Logo.svg.png", size="Large")
-st.title(settings.UI_TITLE)
-st.write(settings.UI_SUBTITLE)
+st.logo("ui/WWF_Logo.svg.png", size="Large")
+st.title(texts.UI_TITLE)
+st.write(texts.UI_SUBTITLE)
 
 st.write(f"Pdfs are taken from {URL}")
 

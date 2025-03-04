@@ -59,12 +59,12 @@ def download_pdfs(leaflet_reader):
 
 def process_pdfs(leaflet_reader, result_saver):
     if result_saver.results_exist_and_should_be_kept(PDF_DIR):
-        print(
+        log_message(
             f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do."
-        )
-        print(
+        , display_mode=False)
+        log_message(
             "If you'd like new results, delete or rename the results file and rerun the script."
-        )
+        , display_mode=False)
         return False
 
     for filename in os.listdir(PDF_DIR):
@@ -73,14 +73,14 @@ def process_pdfs(leaflet_reader, result_saver):
             pdf_name, _ = os.path.splitext(os.path.basename(filename))
             output_dir = os.path.join(PDF_DIR, pdf_name)
             if result_saver.results_exist_and_should_be_kept(output_dir):
-                print(f"Already have results for {filename}, skipping...")
+                log_message(f"Already have results for {filename}, skipping...", display_mode=False)
                 continue
-            print(f"Processing {pdf_path}.")
+            log_message(f"Processing {pdf_path}.", display_mode=False)
             leaflet_reader.convert_pdf_to_images(pdf_path, output_dir)
     return True
 
 
-def process_all_directories(openai_client, categorizer, result_saver, display_mode):
+def process_all_directories(openai_client, categorizer, result_saver, display_mode=False):
     all_directories = [entry.path for entry in os.scandir(PDF_DIR) if entry.is_dir()]
     for directory in all_directories:
         process_directory(
@@ -203,7 +203,7 @@ def validate_product_data(
     return [
         validation.model_dump()
         for validation in (validation_response.all_products or [])
-    ]
+    ] # returns list of dictionaries with extracted data
 
 
 def enrich_product_data(product, image_path):
