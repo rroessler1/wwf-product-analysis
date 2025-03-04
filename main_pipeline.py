@@ -30,59 +30,79 @@ def append_metadata(df: pd.DataFrame):
     df["calendar_week"] = datetime.now().isocalendar().week
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Runs the main script to download PDFs, split them, and write the "
-        "results."
+        description="Runs the main script to download PDFs, split them, and write the results."
     )
     parser.add_argument(
         "--overwrite-results",
-        action="store_true",  # Makes it a flag (True if provided, False if not)
+        action="store_true",
         help="Overwrite existing results if they exist.",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def initialize_components(args):
     leaflet_reader = LeafletReader(download_url=URL)
     openai_client = (
         MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=get_api_key())
     )
     result_saver = ResultSaver(overwrite_results=args.overwrite_results)
     categorizer = ProductCategorizer()
+    return leaflet_reader, openai_client, result_saver, categorizer
 
+
+def download_pdfs(leaflet_reader):
     if DO_DOWNLOAD:
         leaflet_reader.download_leaflets(PDF_DIR)
 
+
+def process_pdfs(leaflet_reader, result_saver):
     if result_saver.results_exist_and_should_be_kept(PDF_DIR):
-        print(
+        log_message(
             f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do."
-        )
-        print(
+        , display_mode=False)
+        log_message(
             "If you'd like new results, delete or rename the results file and rerun the script."
-        )
-        return
+        , display_mode=False)
+        return False
 
     for filename in os.listdir(PDF_DIR):
         if filename.endswith(".pdf"):
             pdf_path = os.path.join(PDF_DIR, filename)
             pdf_name, _ = os.path.splitext(os.path.basename(filename))
             output_dir = os.path.join(PDF_DIR, pdf_name)
-            if result_saver.results_exist_and_should_be_kept(PDF_DIR):
-                print(f"Already have results for {filename}, skipping...")
+            if result_saver.results_exist_and_should_be_kept(output_dir):
+                log_message(f"Already have results for {filename}, skipping...", display_mode=False)
                 continue
-            print(f"Processing {pdf_path}.")
+            log_message(f"Processing {pdf_path}.", display_mode=False)
             leaflet_reader.convert_pdf_to_images(pdf_path, output_dir)
+    return True
 
+
+def process_all_directories(openai_client, categorizer, result_saver, display_mode=False):
     all_directories = [entry.path for entry in os.scandir(PDF_DIR) if entry.is_dir()]
     for directory in all_directories:
         process_directory(
-            directory, directory, openai_client, categorizer, result_saver
+            directory, directory, openai_client, categorizer, result_saver, display_mode
         )
 
-    combined_results = result_saver.combine_results_from_all_subdirectories(PDF_DIR)
-    combined_results_filename = result_saver.save(combined_results, PDF_DIR)
-    print(
-        f"Combined results from all files in {PDF_DIR} saved at: {combined_results_filename}"
+
+def save_results(result_saver):
+    result_saver.save_results(PDF_DIR)
+
+
+def main(display_mode=False):
+    args = parse_arguments()
+    leaflet_reader, openai_client, result_saver, categorizer = initialize_components(
+        args
     )
+
+    download_pdfs(leaflet_reader)
+    if process_pdfs(leaflet_reader, result_saver):
+        process_all_directories(openai_client, categorizer, result_saver, display_mode)
+        return save_results(result_saver)
+    return None
 
 
 def get_all_image_paths(directory: str):
@@ -99,98 +119,144 @@ def process_directory(
     openai_client: OpenAIClient,
     categorizer: ProductCategorizer,
     result_saver,
-    displaymood=False,
+    display_mode=False,
 ):
+    """Processes a directory by extracting product data, validating it, and optionally categorizing products."""
+
     if result_saver.results_exist_and_should_be_kept(PDF_DIR):
-        if displaymood:
-            st.write(f"Results already exist for {directory}, skipping...")
-        else:
-            print(f"Already have results for {directory}, skipping...")
-        # Construct the path to the CSV file
-        csv_path = os.path.join(directory, "results.csv")
-        # Read the CSV file into a DataFrame
-        csv_df = pd.read_csv(csv_path)
-        return True, csv_df
+        log_message(f"Results already exist for {directory}, skipping...", display_mode)
+        return True, pd.read_csv(os.path.join(directory, "results.csv"))
+
+    log_message(f"Processing {directory} ...", display_mode)
 
     image_paths = get_all_image_paths(directory)
     all_products = []
+    all_validation_results = [[] for _ in range(NUMBER_OF_CHATGPT_VALIDATIONS)]
 
-    if displaymood:
+    if display_mode:
         progress_bar = st.progress(0)
-        total_directories = len(image_paths)
 
-    all_validation_results = [[] for i in range(NUMBER_OF_CHATGPT_VALIDATIONS)]
-    # Call LLMs for all images for one PDF at a time
-    for i, image_path in enumerate(image_paths):
-        with open(image_path, "rb") as image_file:
-            if displaymood:
-                st.write(f"Extracting data from {image_path}")
-            else:
-                print(f"Extracting data from {image_path}")
-            response = openai_client.extract(image_file.read())
-            time.sleep(SLEEP_TIME)
+    # Process images and extract data
+    for index, image_path in enumerate(image_paths):
+        extracted_products, validation_results = process_image(
+            image_path, openai_client
+        )
+        all_products.extend(extracted_products)
 
-            # Validate each extracted product from the response
-            for i in range(NUMBER_OF_CHATGPT_VALIDATIONS):  # Number of Checkings
-                print(f"Running validation: {i}")
-                # Validate the product data
-                image_file.seek(0)  # Reset file pointer to beginning for reuse
-                validation_response = openai_client.validate_product_data(
-                    response, image_file.read()
-                )
-                time.sleep(SLEEP_TIME)
+        for i in range(NUMBER_OF_CHATGPT_VALIDATIONS):
+            all_validation_results[i].extend(validation_results[i])
 
-                # Append the validation result to the validation_results list
-                if validation_response:
-                    for validation in validation_response.all_products:
-                        validation_as_dict = validation.model_dump()
-                        all_validation_results[i].append(validation_as_dict)
+        if display_mode:
+            progress_bar.progress((index + 1) / len(image_paths))
 
-            for product in response.all_products:
-                product_as_dict = product.model_dump()
-                # TODO: might need a better way to identify this than just folder
-                # or at least, make sure the folder isn't just "Denner", but has a date or calendar week
-                product_as_dict["folder"] = os.path.basename(directory)
-                product_as_dict["page_number"] = os.path.basename(image_path)
-                all_products.append(product_as_dict)
-
-        if displaymood:
-            progress_bar.progress((i) / total_directories)
-
-    # Create a DataFrame for extracted results
-    extracted_df = pd.DataFrame(all_products)
-    extracted_df = extracted_df.add_prefix(
-        "extracted_"
-    )  # Prefix columns with 'extracted_'
-
-    # Add validation results to the DataFrame
-    for i in range(NUMBER_OF_CHATGPT_VALIDATIONS):
-        validation_df = pd.DataFrame(all_validation_results[i])
-        validation_df = validation_df.add_prefix(
-            f"validated{i + 1}_"
-        )  # Prefix columns with 'validatedX_'
-
-        # Combine extracted data with validation data
-        extracted_df = pd.concat([extracted_df, validation_df], axis=1)
+    extracted_df = create_results_dataframe(all_products, all_validation_results)
 
     if NUMBER_OF_CHATGPT_VALIDATIONS > 0:
         compare_validation(extracted_df)
 
     output_path = result_saver.save(extracted_df, output_dir)
-    print(f"Results from {directory} saved at: {output_path}")
+    log_message(f"Results from {directory} saved at: {output_path}", display_mode)
 
-    if DO_CATEGORIZE:
-        # Categorize products
-        print(f"Categorizing products for {directory}")
-        categorized_df = categorizer.categorize_products(extracted_df, openai_client)
-        append_metadata(categorized_df)
+    return categorize_results(
+        directory,
+        extracted_df,
+        categorizer,
+        openai_client,
+        result_saver,
+        output_dir,
+        display_mode,
+    )
 
-        # Save categorized products to an Excel file
-        output_path = result_saver.save(categorized_df, output_dir)
-        print(f"Categorized results from {directory} saved at: {output_path}")
-        return True, categorized_df
 
-    return True, extracted_df
+def process_image(image_path, openai_client):
+    """Processes a single image, extracts product data, and validates it."""
+
+    log_message(f"Extracting data from {image_path}", display_mode = False)
+
+    with open(image_path, "rb") as image_file:
+        image_data = image_file.read()
+        response = openai_client.extract(image_data)
+        time.sleep(SLEEP_TIME)
+
+        validation_results = [
+            validate_product_data(openai_client, response, image_data, i)
+            for i in range(NUMBER_OF_CHATGPT_VALIDATIONS)
+        ]
+
+    extracted_products = [
+        enrich_product_data(product, image_path) for product in response.all_products
+    ]
+
+    return extracted_products, validation_results
+
+
+def validate_product_data(
+    openai_client, response, image_data, validation_index
+):
+    """Runs a single validation cycle for extracted product data."""
+
+    log_message(f"Running validation: {validation_index + 1}", display_mode= False)
+
+    validation_response = openai_client.validate_product_data(response, image_data)
+    time.sleep(SLEEP_TIME)
+
+    return [
+        validation.model_dump()
+        for validation in (validation_response.all_products or [])
+    ] # returns list of dictionaries with extracted data
+
+
+def enrich_product_data(product, image_path):
+    """Adds additional metadata to extracted product data."""
+    return {
+        **product.model_dump(),
+        "folder": os.path.basename(os.path.dirname(image_path)),
+        "page_number": os.path.basename(image_path),
+    }
+
+
+def create_results_dataframe(all_products, all_validation_results):
+    """Creates and combines extracted and validated results into a single DataFrame."""
+
+    extracted_df = pd.DataFrame(all_products).add_prefix("extracted_")
+
+    for i, validation_data in enumerate(all_validation_results):
+        validation_df = pd.DataFrame(validation_data).add_prefix(f"validated{i + 1}_")
+        extracted_df = pd.concat([extracted_df, validation_df], axis=1)
+
+    return extracted_df
+
+
+def categorize_results(
+    directory,
+    extracted_df,
+    categorizer,
+    openai_client,
+    result_saver,
+    output_dir,
+    display_mode,
+):
+    """Handles product categorization if enabled."""
+
+    if not DO_CATEGORIZE:
+        return True, extracted_df
+
+    log_message(f"Categorizing products for {directory}", display_mode=False)
+    categorized_df = categorizer.categorize_products(extracted_df, openai_client)
+    append_metadata(categorized_df)
+
+    output_path = result_saver.save(categorized_df, output_dir)
+    log_message(
+        f"Categorized results from {directory} saved at: {output_path}", display_mode
+    )
+
+    return True, categorized_df
+
+
+def log_message(message, display_mode):
+    """Logs messages to console or Streamlit depending on display mode."""
+    if display_mode: st.write(message)
+    print(message)
 
 
 if __name__ == "__main__":
