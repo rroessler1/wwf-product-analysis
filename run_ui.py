@@ -1,8 +1,6 @@
 import streamlit as st
 import os
-import pandas as pd
 
-import settings
 from ui import texts
 from main_pipeline import URL, PDF_DIR, main
 

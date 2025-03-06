@@ -30,7 +30,7 @@ class ProductCategorizer:
         step_size = 5
         for i in range(0, len(product_names), step_size):
             categorization_results = openai_client.categorize_products(
-                product_names[i : i + step_size]
+                product_names[i: i + step_size]
             )
             product_categories.extend(categorization_results)
 
@@ -40,7 +40,8 @@ class ProductCategorizer:
             for result in results:
                 res_df.append(
                     {
-                        "category": result.fleischsorte.value,  # Using .value to get the string representation of the category
+                        # Using .value to get the string representation of the category
+                        "category": result.fleischsorte.value,
                         "certainty_fleischsorte": result.certainty_fleischsorte,
                         "is_grill": result.is_grill,
                         "certainty_is_grill": result.certainty_is_grill,
@@ -75,7 +76,8 @@ class ProductCategorizer:
             axis=1,
         )
         data["final_certainty"] = data.apply(
-            lambda row: self.convert_two_column_certainty_to_one_column_certainty(row),
+            lambda row: self.convert_two_column_certainty_to_one_column_certainty(
+                row),
             axis=1,
         )
 
