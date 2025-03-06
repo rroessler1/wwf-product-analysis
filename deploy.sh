@@ -2,7 +2,7 @@
 
 # Set your Docker Hub username and Azure details
 DOCKER_REPO_NAME="parse"
-DOCKER_TAG="latest"
+DOCKER_TAG=$(date +%Y%m%d%H%M%S)
 LOCAL_REPO_NAME="wwf-product-analysis-docker"
 
 RESOURCE_GROUP="WWF"
@@ -47,6 +47,31 @@ push_to_azure() {
     echo "Now test logging in with:"
     echo az containerapp exec  --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --command "/bin/bash"
     echo "URL is $app_url"
+}
+
+# Validate that Docker is installed
+check_docker_cli_installed() {
+    if ! command -v docker &> /dev/null; then
+        echo "docker is not installed!"
+        echo "Install it. Then once it's installed, run:"
+        echo ""
+        echo "sudo systemctl start docker"
+        echo "docker build -t wwf-product-analysis-docker ."
+        echo ""
+        echo "If that second command gives you a permission denied,"
+        echo "add your user to the docker group:"
+        echo "sudo usermod -aG docker \$USER"
+        echo ""
+        echo "You can either log out and log back in, or run:"
+        echo "newgrp docker"
+        echo ""
+        exit 1
+    fi
+
+    if ! sudo systemctl is-active --quiet docker; then
+        echo "Docker service is not running. Starting it now..."
+        sudo systemctl start docker
+    fi
 }
 
 # Validate that Azure CLI is installed
