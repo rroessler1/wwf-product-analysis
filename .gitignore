@@ -2,6 +2,7 @@
 openai_api_key.*
 set_openai_api_key.*
 pdf-files/
+wwf_last_year_data/
 # Ignore all .vscode file except the communal settings.
 .vscode/*
 !.vscode/settings.json
