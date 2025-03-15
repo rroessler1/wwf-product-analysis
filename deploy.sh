@@ -11,6 +11,7 @@ ENVIRONMENT="managedEnvironment-WWF-9ad0"
 
 # Function to push the image to Docker Hub
 push_to_docker() {
+    check_docker_cli_installed
     echo "Building Docker image..."
     docker build -t $LOCAL_REPO_NAME .
     docker tag $LOCAL_REPO_NAME $1/$DOCKER_REPO_NAME:$DOCKER_TAG
