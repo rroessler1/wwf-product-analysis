@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 
 import argparse
@@ -19,9 +20,9 @@ from validation.validation_comparison import compare_validation
 
 PDF_DIR = "pdf-files"
 URL = "https://drive.google.com/drive/folders/1AR2_592V_x4EF97FHv4UPN5zdLTXpVB3"
-DO_DOWNLOAD = False  # just used for testing, saves time
+DO_DOWNLOAD = True  # just used for testing, saves time
 DO_CATEGORIZE = True
-USE_TEST_LLM_CLIENT = True
+USE_TEST_LLM_CLIENT = False
 SLEEP_TIME = 0  # TODO: test that we're not being rate limited using their API key
 
 
@@ -54,17 +55,30 @@ def initialize_components(args):
 
 def download_pdfs(leaflet_reader):
     if DO_DOWNLOAD:
+        delete_directory_contents(PDF_DIR)
         leaflet_reader.download_leaflets(PDF_DIR)
+
+
+def delete_directory_contents(directory: str):
+    if directory.startswith("/") or ".." in directory:
+        raise ValueError(
+            f"Refusing to delete {directory}, you can only delete directories from the "
+            "base project root."
+        )
+    shutil.rmtree(directory, ignore_errors=True)
+    os.makedirs(directory, exist_ok=True)
 
 
 def process_pdfs(leaflet_reader, result_saver):
     if result_saver.results_exist_and_should_be_kept(PDF_DIR):
         log_message(
-            f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do."
-        , display_mode=False)
+            f"Already found a results file: [{os.path.join(PDF_DIR, result_saver.output_file_name)}], nothing to do.",
+            display_mode=False,
+        )
         log_message(
-            "If you'd like new results, delete or rename the results file and rerun the script."
-        , display_mode=False)
+            "If you'd like new results, delete or rename the results file and rerun the script.",
+            display_mode=False,
+        )
         return False
 
     for filename in os.listdir(PDF_DIR):
@@ -73,14 +87,19 @@ def process_pdfs(leaflet_reader, result_saver):
             pdf_name, _ = os.path.splitext(os.path.basename(filename))
             output_dir = os.path.join(PDF_DIR, pdf_name)
             if result_saver.results_exist_and_should_be_kept(output_dir):
-                log_message(f"Already have results for {filename}, skipping...", display_mode=False)
+                log_message(
+                    f"Already have results for {filename}, skipping...",
+                    display_mode=False,
+                )
                 continue
             log_message(f"Processing {pdf_path}.", display_mode=False)
             leaflet_reader.convert_pdf_to_images(pdf_path, output_dir)
     return True
 
 
-def process_all_directories(openai_client, categorizer, result_saver, display_mode=False):
+def process_all_directories(
+    openai_client, categorizer, result_saver, display_mode=False
+):
     all_directories = [entry.path for entry in os.scandir(PDF_DIR) if entry.is_dir()]
     for directory in all_directories:
         process_directory(
@@ -171,7 +190,7 @@ def process_directory(
 def process_image(image_path, openai_client):
     """Processes a single image, extracts product data, and validates it."""
 
-    log_message(f"Extracting data from {image_path}", display_mode = False)
+    log_message(f"Extracting data from {image_path}", display_mode=False)
 
     with open(image_path, "rb") as image_file:
         image_data = image_file.read()
@@ -190,12 +209,10 @@ def process_image(image_path, openai_client):
     return extracted_products, validation_results
 
 
-def validate_product_data(
-    openai_client, response, image_data, validation_index
-):
+def validate_product_data(openai_client, response, image_data, validation_index):
     """Runs a single validation cycle for extracted product data."""
 
-    log_message(f"Running validation: {validation_index + 1}", display_mode= False)
+    log_message(f"Running validation: {validation_index + 1}", display_mode=False)
 
     validation_response = openai_client.validate_product_data(response, image_data)
     time.sleep(SLEEP_TIME)
@@ -203,7 +220,7 @@ def validate_product_data(
     return [
         validation.model_dump()
         for validation in (validation_response.all_products or [])
-    ] # returns list of dictionaries with extracted data
+    ]  # returns list of dictionaries with extracted data
 
 
 def enrich_product_data(product, image_path):
@@ -255,7 +272,8 @@ def categorize_results(
 
 def log_message(message, display_mode):
     """Logs messages to console or Streamlit depending on display mode."""
-    if display_mode: st.write(message)
+    if display_mode:
+        st.write(message)
     print(message)
 
 
