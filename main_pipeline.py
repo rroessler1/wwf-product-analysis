@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from categorization.product_categorizer import ProductCategorizer
+from file_downloaders import NoopDownloader
 from leaflet_reader import LeafletReader
 from llms.openai_client import OpenAIClient
 from llms.mock_client import MockLLM
@@ -18,8 +19,6 @@ from validation.validation_comparison import compare_validation
 
 
 PDF_DIR = "pdf-files"
-URL = "https://drive.google.com/drive/folders/1AR2_592V_x4EF97FHv4UPN5zdLTXpVB3"
-DO_DOWNLOAD = False  # just used for testing, saves time
 DO_CATEGORIZE = True
 USE_TEST_LLM_CLIENT = True
 SLEEP_TIME = 0  # TODO: test that we're not being rate limited using their API key
@@ -39,22 +38,17 @@ def parse_arguments():
         action="store_true",
         help="Overwrite existing results if they exist.",
     )
-    return parser.parse_args()
+    return vars(parser.parse_args())
 
 
 def initialize_components(args):
-    leaflet_reader = LeafletReader(download_url=URL)
+    leaflet_reader = LeafletReader(file_downloader=NoopDownloader())
     openai_client = (
         MockLLM() if USE_TEST_LLM_CLIENT else OpenAIClient(api_key=get_api_key())
     )
-    result_saver = ResultSaver(overwrite_results=args.overwrite_results)
+    result_saver = ResultSaver(overwrite_results=args["overwrite_results"])
     categorizer = ProductCategorizer()
     return leaflet_reader, openai_client, result_saver, categorizer
-
-
-def download_pdfs(leaflet_reader):
-    if DO_DOWNLOAD:
-        leaflet_reader.download_leaflets(PDF_DIR)
 
 
 def process_pdfs(leaflet_reader, result_saver):
@@ -93,19 +87,25 @@ def process_all_directories(
         process_directory(
             directory, directory, openai_client, categorizer, result_saver, display_mode
         )
+    # For any images that were added individually
+    if len(get_all_image_paths(PDF_DIR)) > 0:
+        process_directory(
+            PDF_DIR, PDF_DIR, openai_client, categorizer, result_saver, display_mode
+        )
 
 
 def save_results(result_saver):
     result_saver.save_results(PDF_DIR)
 
 
-def main(display_mode=False):
-    args = parse_arguments()
-    leaflet_reader, openai_client, result_saver, categorizer = initialize_components(
-        args
-    )
-
-    download_pdfs(leaflet_reader)
+def main(
+    leaflet_reader: LeafletReader,
+    openai_client: OpenAIClient,
+    result_saver: ResultSaver,
+    categorizer: ProductCategorizer,
+    display_mode=False,
+):
+    leaflet_reader.download_leaflets(PDF_DIR)
     if process_pdfs(leaflet_reader, result_saver):
         process_all_directories(openai_client, categorizer, result_saver, display_mode)
         return save_results(result_saver)
@@ -266,4 +266,5 @@ def log_message(message, display_mode):
 
 
 if __name__ == "__main__":
-    main()
+    arguments = parse_arguments()
+    main(*initialize_components(arguments))

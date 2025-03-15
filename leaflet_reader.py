@@ -4,37 +4,28 @@ import glob
 import os
 from typing import List
 
-import gdown
 from natsort import natsorted
 import pypdfium2 as pdfium
 from PyPDF2 import PdfReader
 
+from file_downloaders import Downloader
+
 
 class LeafletReader:
 
-    def __init__(self, download_url: str, do_download=True):
+    def __init__(self, file_downloader: Downloader):
         """
-        Initializes the LeafletReader with the directory for PDFs and download URL.
-
         Parameters:
-            download_url (str): URL of the leaflet folder to download.
+            file_downloader (Downloader): Responsible for downloading the files
         """
-        self.download_url = download_url
-
-        # if do_download:
-        #     self.download_leaflet()
-
-        # self.all_files = os.listdir(self.pdf_dir)
-        # self.selected_files = os.listdir(self.pdf_dir)
+        self.file_downloader = file_downloader
 
     def download_leaflets(self, pdf_dir: str) -> None:
         """
-        Downloads the PDF leaflets from the specified URL and saves them in pdf_dir.
+        Saves the leaflets into the pdf_dir.
         """
-        # TODO: this should check for duplicates and not re-download them
-        # but no need to do it now as we probably won't use Google Drive for the final solution
         os.makedirs(pdf_dir, exist_ok=True)
-        gdown.download_folder(self.download_url, output=pdf_dir)
+        self.file_downloader.download(pdf_dir)
         print("Leaflets downloaded successfully.")
 
     def convert_pdf_to_images(
@@ -73,8 +64,7 @@ class LeafletReader:
         pdf_doc = pdfium.PdfDocument(pdf_path)
         paths = []
 
-        for i in range(len(pdf_doc)):
-            page = pdf_doc[i]
+        for i, page in enumerate(pdf_doc):
             image = page.render(scale=4).to_pil()
             output_filename = os.path.join(output_dir, f"{pdf_name}_{i + 1}.png")
             image.save(output_filename, format="PNG")
