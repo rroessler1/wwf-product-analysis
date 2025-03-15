@@ -23,6 +23,7 @@ def run_pipeline(zipfile):
 st.logo("ui/WWF_Logo.svg.png", size="Large")
 st.title(texts.UI_TITLE)
 st.write(texts.UI_SUBTITLE)
+st.write(texts.INSTRUCTIONS)
 
 uploaded_file = st.file_uploader("Upload your zipfile", type=["zip"])
 if uploaded_file and st.button("Process Leaflets"):
