@@ -1,15 +1,21 @@
 import streamlit as st
 import os
-import pandas as pd
 
-import settings
+from file_downloaders import StreamlitDownloader
+from leaflet_reader import LeafletReader
+from main_pipeline import PDF_DIR, initialize_components, main
 from ui import texts
-from main_pipeline import URL, PDF_DIR, main
 
 
-def run_pipeline():
+def run_pipeline(zipfile):
     st.write("Processing started...")
-    st.session_state["results"] = main(display_mode=True)
+    args = {"overwrite_results": True}
+    _, openai_client, result_saver, categorizer = initialize_components(args)
+    leaflet_reader = LeafletReader(StreamlitDownloader(zipfile))
+
+    st.session_state["results"] = main(
+        leaflet_reader, openai_client, result_saver, categorizer, display_mode=True
+    )
     st.write("Processing finished")
 
 
@@ -17,11 +23,11 @@ def run_pipeline():
 st.logo("ui/WWF_Logo.svg.png", size="Large")
 st.title(texts.UI_TITLE)
 st.write(texts.UI_SUBTITLE)
+st.write(texts.INSTRUCTIONS)
 
-st.write(f"Pdfs are taken from {URL}")
-
-if st.button("Process Leaflets"):
-    run_pipeline()
+uploaded_file = st.file_uploader("Upload your zipfile", type=["zip"])
+if uploaded_file and st.button("Process Leaflets"):
+    run_pipeline(uploaded_file)
 
 # Display results if available
 if "results" in st.session_state:

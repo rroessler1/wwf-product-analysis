@@ -1,5 +1,4 @@
 argparse==1.4.0
-gdown==5.2.0
 jupyterlab==4.3.0
 natsort==8.4.0
 openai==1.55.3
