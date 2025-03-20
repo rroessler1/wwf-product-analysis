@@ -69,13 +69,11 @@ class ProductCategorizer:
 
     def reduce_categorization_dimensions(self, data):
         data["final_category"] = data.apply(
-            lambda row: self.convert_two_column_categorization_to_one_column_categorization(
-                row
-            ),
+            self.convert_two_column_categorization_to_one_column_categorization,
             axis=1,
         )
         data["final_certainty"] = data.apply(
-            lambda row: self.convert_two_column_certainty_to_one_column_certainty(row),
+            self.convert_two_column_certainty_to_one_column_certainty,
             axis=1,
         )
 
@@ -83,7 +81,7 @@ class ProductCategorizer:
     def convert_two_column_categorization_to_one_column_categorization(
         row: pd.Series,
     ) -> FinalProductCategory:
-        if (not row["is_grill"]) or row["category"] == ProductCategory.OTHERS:
+        if (not row["is_grill"]) or row["category"] == ProductCategory.OTHERS.value:
             return FinalProductCategory.NO_GRILL_PRODUCT.value
         else:
             return FinalProductCategory(row["category"]).value
