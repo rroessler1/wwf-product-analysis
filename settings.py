@@ -5,5 +5,5 @@ EXTRACTED_DATA_COLUMNS = [
     "discount_price",
     "percentage_discount",
 ]
-NUMBER_OF_CHATGPT_VALIDATIONS = 1
+NUMBER_OF_CHATGPT_VALIDATIONS = 0
 PDF_DIR = "pdf-files"
