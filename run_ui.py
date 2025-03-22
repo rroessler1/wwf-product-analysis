@@ -3,19 +3,20 @@ import os
 
 from file_downloaders import StreamlitDownloader
 from leaflet_reader import LeafletReader
-from main_pipeline import PDF_DIR, initialize_components, main
+from main_pipeline import PDF_DIR, Pipeline
 from ui import texts
 
 
 def run_pipeline(zipfile):
     st.write("Processing started...")
-    args = {"overwrite_results": True}
-    _, openai_client, result_saver, categorizer = initialize_components(args)
-    leaflet_reader = LeafletReader(StreamlitDownloader(zipfile))
-
-    st.session_state["results"] = main(
-        leaflet_reader, openai_client, result_saver, categorizer, display_mode=True
+    args = {"overwrite_results": True, "use_test_client": False, "no_categorize": False}
+    pipeline = Pipeline(
+        args,
+        leaflet_reader=LeafletReader(StreamlitDownloader(zipfile)),
+        display_mode=True,
     )
+
+    st.session_state["results"] = pipeline.main()
     st.write("Processing finished")
 
 
