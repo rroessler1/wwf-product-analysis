@@ -52,7 +52,7 @@ class ResultSaver:
         self, parent_directory: str
     ) -> pd.DataFrame:
         all_results_files = glob.glob(
-            f"{parent_directory}/**/{self.output_file_name}", recursive=True
+            f"{parent_directory}/*/**/{self.output_file_name}", recursive=True
         )
         return pd.concat(
             [pd.read_excel(file) for file in all_results_files], ignore_index=True

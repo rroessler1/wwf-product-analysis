@@ -1,10 +1,12 @@
-import streamlit as st
 import os
+import streamlit as st
 
 from file_downloaders import StreamlitDownloader
 from leaflet_reader import LeafletReader
-from main_pipeline import PDF_DIR, Pipeline
+from main_pipeline import Pipeline
 from ui import texts
+
+PDF_DIR = "pdf-files"
 
 
 def run_pipeline(zipfile):
@@ -13,6 +15,7 @@ def run_pipeline(zipfile):
     pipeline = Pipeline(
         args,
         leaflet_reader=LeafletReader(StreamlitDownloader(zipfile)),
+        pdf_dir=PDF_DIR,
         display_mode=True,
     )
 

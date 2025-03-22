@@ -18,15 +18,19 @@ from utils import log_message
 from validation.validation_comparison import compare_validation
 
 
-PDF_DIR = "pdf-files"
 SLEEP_TIME = 0  # TODO: test that we're not being rate limited using their API key
 
 
 class Pipeline:
     def __init__(
-        self, args: dict, leaflet_reader: LeafletReader, display_mode: bool = False
+        self,
+        args: dict,
+        leaflet_reader: LeafletReader,
+        pdf_dir: str = "pdf-files",
+        display_mode: bool = False,
     ) -> None:
         self.args = args
+        self.pdf_dir = pdf_dir
         self.display_mode = display_mode
         self.leaflet_reader = leaflet_reader
         self.openai_client = (
@@ -44,9 +48,9 @@ class Pipeline:
         df["calendar_week"] = datetime.now().isocalendar().week
 
     def process_pdfs(self):
-        if self.result_saver.results_exist_and_should_be_kept(PDF_DIR):
+        if self.result_saver.results_exist_and_should_be_kept(self.pdf_dir):
             log_message(
-                f"Already found a results file: [{os.path.join(PDF_DIR, self.result_saver.output_file_name)}], nothing to do.",
+                f"Already found a results file: [{os.path.join(self.pdf_dir, self.result_saver.output_file_name)}], nothing to do.",
                 display_mode=False,
             )
             log_message(
@@ -55,11 +59,11 @@ class Pipeline:
             )
             return False
 
-        for filename in os.listdir(PDF_DIR):
+        for filename in os.listdir(self.pdf_dir):
             if filename.endswith(".pdf"):
-                pdf_path = os.path.join(PDF_DIR, filename)
+                pdf_path = os.path.join(self.pdf_dir, filename)
                 pdf_name, _ = os.path.splitext(os.path.basename(filename))
-                output_dir = os.path.join(PDF_DIR, pdf_name)
+                output_dir = os.path.join(self.pdf_dir, pdf_name)
                 if self.result_saver.results_exist_and_should_be_kept(output_dir):
                     log_message(
                         f"Already have results for {filename}, skipping...",
@@ -72,7 +76,7 @@ class Pipeline:
 
     def process_all_directories(self):
         all_directories = [
-            entry.path for entry in os.scandir(PDF_DIR) if entry.is_dir()
+            entry.path for entry in os.scandir(self.pdf_dir) if entry.is_dir()
         ]
         for directory in all_directories:
             self.process_directory(
@@ -80,14 +84,14 @@ class Pipeline:
                 directory,
             )
         # For any images that were added individually
-        if len(utils.get_all_image_paths(PDF_DIR)) > 0:
-            self.process_directory(PDF_DIR, PDF_DIR)
+        if len(utils.get_all_image_paths(self.pdf_dir)) > 0:
+            self.process_directory(self.pdf_dir, self.pdf_dir)
 
-    def main(self):
-        self.leaflet_reader.download_leaflets(PDF_DIR)
+    def main(self) -> pd.DataFrame | None:
+        self.leaflet_reader.download_leaflets(self.pdf_dir)
         if self.process_pdfs():
             self.process_all_directories()
-            return self.result_saver.save_results(PDF_DIR)
+            return self.result_saver.save_results(self.pdf_dir)
         return None
 
     def process_directory(self, directory: str, output_dir: str):
