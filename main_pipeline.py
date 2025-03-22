@@ -93,7 +93,7 @@ class Pipeline:
     def process_directory(self, directory: str, output_dir: str):
         """Processes a directory by extracting product data, validating it, and optionally categorizing products."""
 
-        if self.result_saver.results_exist_and_should_be_kept(PDF_DIR):
+        if self.result_saver.results_exist_and_should_be_kept(directory):
             log_message(
                 f"Results already exist for {directory}, skipping...", self.display_mode
             )
