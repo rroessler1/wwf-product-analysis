@@ -58,8 +58,13 @@ def show_mismatches(df):
         if mismatches.empty:
             print("No mismatches found.")
         else:
+            mismatches = mismatches.sort_values(
+                by=["check_category", "check_is_grill"],
+                ascending=[True, True]  # False (mismatch) comes first
+            )
+
             print(f"\nShowing {len(mismatches)} mismatched rows:\n")
-            print(mismatches)
+            print(mismatches[["extracted_product_name", "category", "is_grill", "solution_category" ,"solution_is_grill", "check_category", "check_is_grill"]])
     else:
         print("Okay, not showing mismatches.")
 
