@@ -20,6 +20,7 @@ class MockLLM:
         self._client.categorize_products = MagicMock(
             side_effect=self._categorization_results
         )
+        self._num_items_seen = 0
 
     def _results(self) -> Results:
         p1 = GroceryProduct(
@@ -38,17 +39,22 @@ class MockLLM:
         return Results(all_products=[p1, p2])
 
     def _categorization_results(self, products: List[str]) -> ResponseFormat:
-        return ResponseFormat(
-            results=[
+        results = []
+        for _ in products:
+            results.append(
                 CategorizationResult(
-                    fleischsorte=ProductCategory.GEFUEGEL,
-                    certainty_fleischsorte=100,
-                    is_grill=True,
-                    certainty_is_grill=100,
+                    fleischsorte=list(ProductCategory)[
+                        self._num_items_seen % len(ProductCategory)
+                    ],
+                    certainty_fleischsorte=(self._num_items_seen % len(ProductCategory))
+                    * 10,
+                    is_grill=self._num_items_seen % 2,
+                    certainty_is_grill=(self._num_items_seen % len(ProductCategory))
+                    * 10,
                 )
-                for _ in products
-            ]
-        )
+            )
+            self._num_items_seen += 1
+        return ResponseFormat(results=results)
 
     def __getattr__(self, name):
         # Delegate attribute access to the MagicMock
