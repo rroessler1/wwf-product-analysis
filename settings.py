@@ -6,4 +6,3 @@ EXTRACTED_DATA_COLUMNS = [
     "percentage_discount",
 ]
 NUMBER_OF_CHATGPT_VALIDATIONS = 0
-PDF_DIR = "pdf-files"

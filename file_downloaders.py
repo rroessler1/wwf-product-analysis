@@ -4,6 +4,8 @@ import zipfile
 
 from abc import ABC, abstractmethod
 
+from utils import delete_directory_contents
+
 
 class Downloader(ABC):
 
@@ -19,6 +21,8 @@ class StreamlitDownloader(Downloader):
         self.uploaded_file = uploaded_file
 
     def download(self, directory):
+        delete_directory_contents(directory)
+
         with zipfile.ZipFile(io.BytesIO(self.uploaded_file.read()), "r") as zf:
             os.makedirs(directory, exist_ok=True)
             zf.extractall(directory)

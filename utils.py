@@ -1,11 +1,22 @@
 """Commonly used utility functions."""
 
 import os
+import shutil
 import streamlit as st
 
 from natsort import natsorted
 
 from settings import API_KEY_ENV_VAR_NAME
+
+
+def delete_directory_contents(directory: str):
+    if directory.startswith("/") or ".." in directory:
+        raise ValueError(
+            f"Refusing to delete {directory}, you can only delete directories from the "
+            "base project root."
+        )
+    shutil.rmtree(directory, ignore_errors=True)
+    os.makedirs(directory, exist_ok=True)
 
 
 def get_env_var(var_name: str) -> str:
