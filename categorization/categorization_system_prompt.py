@@ -2,7 +2,7 @@ CATEGORIZATION_SYSTEM_PROMPT = """
 # Product Classification System
 
 ## Objective
-Classify products based on their type (`Fleischsorte`) and determine if they are suitable for grilling (`is_grill`) according to the guidelines provided below.
+Classify products based on their type (`Fleischsorte`) according to the guidelines provided below.
 
 ---
 
@@ -22,27 +22,6 @@ Classify products into one of the following categories based on their main ingre
 
 ---
 
-### 2. `is_grill` Suitability Rules
-Classify a product as suitable for grilling (`is_grill = yes`) under the following conditions:
-
-1. **Explicit Labels**:
-   - Products labeled for grilling (e.g., "BBQ," "Grill").
-
-2. **Inherently Grillable Cuts** (even without labels):
-   - Steaks (e.g., "Schweinshuftsteak," "Rindersteak").
-   - Premium cuts (e.g., "Rindsfilet").
-   - Common grill items like skewers, ribs, or grilling cheese (e.g., Halloumi).
-
-3. **Special Cases**:
-   - **Green Mountain** products are always grill-suitable (`is_grill = yes`).
-
-Exclude products (`is_grill = no`) if they fall into any of these categories:
-- **Whole Animals**: (e.g., whole chicken).
-- **Ground or Minced Meat**: (e.g., "Hackfleisch") unless explicitly labeled for grilling.
-- **Processed or Breaded Items**: Breaded meats, pre-cooked items, or those not labeled for grilling.
-
----
-
 ### 3. Certainty Scores
 Provide certainty scores (0%-100%) for each classification:
 1. **`certainty_fleischsorte`**: Confidence in assigning `Fleischsorte`.
@@ -50,18 +29,13 @@ Provide certainty scores (0%-100%) for each classification:
    - Medium: Ambiguity in product labeling (60%-89%).
    - Low: Insufficient context (50%-59%).
 
-2. **`certainty_is_grill`**: Confidence in grilling suitability.
-   - High: Clear grilling-related labels (90%-100%).
-   - Medium: Partial or ambiguous indicators (60%-89%).
-   - Low: Little to no evidence of grilling suitability (50%-59%).
-
 ---
 
 ## Input/Output Format
 
 **Input**: List of up to 5 product names (one per line).
 **Output**: For each product, provide:
-`Product Name: Fleischsorte, certainty_fleischsorte (%), is_grill (yes/no), certainty_is_grill (%)`.
+`Product Name: Fleischsorte, certainty_fleischsorte (%).
 
 ---
 
@@ -75,22 +49,18 @@ Provide certainty scores (0%-100%) for each classification:
 5. Schweinehackfleisch
 
 **Output**:
-1. Rind, 95%, no, 95%
-2. Schwein, 85%, no, 70%
-3. Geflügel, 98%, yes, 98%
-4. Käse, 95%, yes, 95%
-5. Schwein, 90%, no, 90%
+1. Rind, 95%
+2. Schwein, 85%
+3. Geflügel, 98%
+4. Käse, 95%
+5. Schwein, 90%
 
 ---
 
 ## Notes
 - Low-confidence predictions (`certainty < 60%`) should be flagged for manual review.
-- If the category or grill suitability cannot be determined, assign lower confidence scores and default to `is_grill = no`.
 - Follow these rules consistently to ensure high-quality classification.
 
----
-
-This updated prompt simplifies repetitive elements and makes your classification process clearer and more robust.
 """
 
 CATEGORIZATION_SYSTEM_PROMPT_OLD = """

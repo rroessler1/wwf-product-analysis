@@ -7,7 +7,7 @@ from .models import (
     CategorizationResult,
     GroceryProduct,
     ProductCategory,
-    ResponseFormat,
+    ClassificationResponseFormat,
 )
 
 
@@ -38,7 +38,7 @@ class MockLLM:
         )
         return Results(all_products=[p1, p2])
 
-    def _categorization_results(self, products: List[str]) -> ResponseFormat:
+    def _categorization_results(self, products: List[str]) -> ClassificationResponseFormat:
         results = []
         for _ in products:
             results.append(
@@ -54,7 +54,7 @@ class MockLLM:
                 )
             )
             self._num_items_seen += 1
-        return ResponseFormat(results=results)
+        return ClassificationResponseFormat(results=results)
 
     def __getattr__(self, name):
         # Delegate attribute access to the MagicMock
