@@ -76,6 +76,10 @@ def run():
     calculate_statistics(categorized_df)
     show_mismatches(categorized_df)
 
-if __name__ == "__main__":
+def convert_excel_to_csv():
+    df = pd.read_excel("tests/data/category_test.xlsx")
+    df.to_csv(TEST_FILE, index=False)
 
+if __name__ == "__main__":
+    convert_excel_to_csv()
     run()

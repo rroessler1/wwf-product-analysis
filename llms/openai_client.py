@@ -4,10 +4,11 @@ import logging
 from openai import OpenAI, RateLimitError
 
 from categorization.categorization_system_prompt import CATEGORIZATION_SYSTEM_PROMPT
-from categorization.categorization_user_prompt import CATEGORIZATION_USER_PROMPT
+from categorization.categorization_user_prompt import CATEGORIZATION_USER_PROMPT, CLASSIFICATION_IS_GRILL_USER_PROMPT
 from validation.validation_system_prompt import VALIDATION_SYSTEM_PROMPT
 from validation.validation_user_prompt import VALIDATION_USER_PROMPT
-from .models import Results, ResponseFormat
+from .models import Results,ClassificationIsGrillResponseFormat, \
+    CategorizationResponseFormat
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -85,7 +86,7 @@ class OpenAIClient:
         wait=wait_fixed(RETRY_WAIT_IN_SECS),
         before_sleep=before_sleep_log(logger, logging.INFO),
     )
-    def categorize_products(self, products: List[str]) -> ResponseFormat:
+    def categorize_products(self, products: List[str]) -> CategorizationResponseFormat:
         """
         Sends prompt to OpenAI to get product categorization for products
         :param products: product data
@@ -101,16 +102,45 @@ class OpenAIClient:
                     "content": self.build_product_categorization_prompt(products),
                 },
             ],
-            response_format=ResponseFormat,
+            response_format=CategorizationResponseFormat,
             temperature=0.5,
         )
 
         # Extract and parse the response
         return response.choices[0].message.parsed
 
+    def classify_products_is_grill(self, products: List[str], system_prompt:str) -> ClassificationIsGrillResponseFormat:
+        """
+        Sends prompt to OpenAI to get product classification is_grill for products
+        :param products: product data
+        :param system_prompt: category specific system prompt
+        :return: product categorization data
+        """
+
+        response = self.client.beta.chat.completions.parse(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": self.build_product_classification_is_grill_prompt(products),
+                },
+            ],
+            response_format=ClassificationIsGrillResponseFormat,
+            temperature=0.5,
+        )
+
+        # Extract and parse the response
+        return response.choices[0].message.parsed
+
+
     @staticmethod
     def build_product_categorization_prompt(products: List[str]) -> str:
         return CATEGORIZATION_USER_PROMPT + "\n".join(products)
+
+    @staticmethod
+    def build_product_classification_is_grill_prompt(products: List[str]) -> str:
+        return CLASSIFICATION_IS_GRILL_USER_PROMPT + "\n".join(products)
 
     @staticmethod
     def build_product_data_validation_prompt(products: Results) -> str:

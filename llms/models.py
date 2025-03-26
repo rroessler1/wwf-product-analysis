@@ -54,7 +54,7 @@ class ProductCategory(Enum):
     KAESE = "Käse"
     FISCH_MEERESFRUECHTE = "Fisch & Meeresfrüchte"
     VEGETARISCH_VEGAN = "Vegetarisches oder veganes Ersatzprodukt"
-    GRILLGEMUeSE = "Grillgemüse"
+    GRILLGEMUESE = "Grillgemüse"
     OTHERS = "other"
 
 
@@ -76,11 +76,16 @@ class CategorizationResult(BaseModel):
     certainty_fleischsorte: (
         float  # Certainty percentage for Fleischsorte classification (0-100)
     )
+
+class ClassificationIsGrillResult(BaseModel):
     is_grill: bool  # Whether the product is considered a grill product
     certainty_is_grill: (
         float  # Certainty percentage for is_grill classification (0-100)
     )
 
 
-class ResponseFormat(BaseModel):
+class CategorizationResponseFormat(BaseModel):
     results: List[CategorizationResult]  # List of categorization results (max 5)
+
+class ClassificationIsGrillResponseFormat(BaseModel):
+    results: List[ClassificationIsGrillResult]
