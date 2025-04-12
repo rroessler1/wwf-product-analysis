@@ -3,26 +3,32 @@
 import pandas as pd
 from collections import defaultdict
 
-from categorization.classification_is_grill_system_prompt import CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEFLUEGEL, \
-    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_SCHWEIN, CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_RIND, \
-    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMISCHT, CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_KAESE, \
-    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_FISCH, CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_VEGAN, \
-    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMUESE, CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS
+from categorization.classification_is_grill_system_prompt import (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEFLUEGEL,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_SCHWEIN,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_RIND,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMISCHT,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_KAESE,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_FISCH,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_VEGAN,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMUESE,
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS,
+)
 from llms.models import ProductCategory, FinalProductCategory
 from llms.openai_client import OpenAIClient
 from utils import get_api_key
-
-
-
 
 
 class ProductCategorizer:
     def __init__(self):
         self.categorization_columns = []
 
-    def classify_is_grill_batch(self,
-                                product_names: list[str], category: str, openai_client: OpenAIClient,
-                                ) -> list[dict]:
+    def classify_is_grill_batch(
+        self,
+        product_names: list[str],
+        category: str,
+        openai_client: OpenAIClient,
+    ) -> list[dict]:
         """
         Classifies a batch of product names for 'is_grill' using a category-specific system prompt.
 
@@ -50,23 +56,29 @@ class ProductCategorizer:
             ProductCategory.GRILLGEMUESE.value: CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMUESE,
             ProductCategory.OTHERS.value: CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS,
         }
-        system_prompt = SYSTEM_PROMPT_MAPPING.get(category, CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS)
+        system_prompt = SYSTEM_PROMPT_MAPPING.get(
+            category, CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS
+        )
 
         # Call the classification method defined on the enum member.
         # This method is expected to return a ClassificationIsGrillResponseFormat instance.
-        response = openai_client.classify_products_is_grill(product_names, system_prompt)
+        response = openai_client.classify_products_is_grill(
+            product_names, system_prompt
+        )
 
         # Extract and convert the results to a list of dictionaries.
         results = []
         for result in response.results:
-            results.append({
-                "is_grill": result.is_grill,
-                "certainty_is_grill": result.certainty_is_grill,
-            })
+            results.append(
+                {
+                    "is_grill": result.is_grill,
+                    "certainty_is_grill": result.certainty_is_grill,
+                }
+            )
         return results
 
     def categorize_products(
-            self, data: pd.DataFrame, openai_client: OpenAIClient
+        self, data: pd.DataFrame, openai_client: OpenAIClient
     ) -> pd.DataFrame:
         """
         Categorizes products in two steps:
@@ -84,7 +96,7 @@ class ProductCategorizer:
         product_categories: list[ProductCategory] = []
         for i in range(0, len(product_names), step_size):
             categorization_results = openai_client.categorize_products(
-                product_names[i: i + step_size]
+                product_names[i : i + step_size]
             )
             product_categories.extend(categorization_results)
 
@@ -92,10 +104,12 @@ class ProductCategorizer:
         category_results = []
         for _, results in product_categories:
             for result in results:
-                category_results.append({
-                    "category": result.fleischsorte.value,  # string representation of the category
-                    "certainty_fleischsorte": result.certainty_fleischsorte
-                })
+                category_results.append(
+                    {
+                        "category": result.fleischsorte.value,  # string representation of the category
+                        "certainty_fleischsorte": result.certainty_fleischsorte,
+                    }
+                )
 
         # Check that the number of category results matches the input data.
         if len(data.index) != len(category_results):
@@ -114,24 +128,25 @@ class ProductCategorizer:
         # Process each group in batches of up to 5 products.
         for category, items in category_groups.items():
             for i in range(0, len(items), step_size):
-                batch = items[i: i + step_size]
+                batch = items[i : i + step_size]
                 indices, names = zip(*batch)
                 # Call the placeholder function for the batch.
-                batch_results = self.classify_is_grill_batch(list(names), category, openai_client)
+                batch_results = self.classify_is_grill_batch(
+                    list(names), category, openai_client
+                )
                 # Assign the results back to the corresponding positions.
                 for idx_item, result in zip(indices, batch_results):
                     category_results[idx_item]["is_grill"] = result["is_grill"]
-                    category_results[idx_item]["certainty_is_grill"] = result["certainty_is_grill"]
+                    category_results[idx_item]["certainty_is_grill"] = result[
+                        "certainty_is_grill"
+                    ]
 
         # Merge the results with the original DataFrame.
         res_df = pd.DataFrame(category_results)
         data = pd.concat([data, res_df], axis=1)
-        self.categorization_columns.extend([
-            "category",
-            "certainty_fleischsorte",
-            "is_grill",
-            "certainty_is_grill"
-        ])
+        self.categorization_columns.extend(
+            ["category", "certainty_fleischsorte", "is_grill", "certainty_is_grill"]
+        )
 
         self.reduce_categorization_dimensions(data)
         return data
@@ -148,7 +163,7 @@ class ProductCategorizer:
 
     @staticmethod
     def convert_two_column_categorization_to_one_column_categorization(
-            row: pd.Series,
+        row: pd.Series,
     ) -> FinalProductCategory:
         if (not row["is_grill"]) or row["category"] == ProductCategory.OTHERS.value:
             return FinalProductCategory.NO_GRILL_PRODUCT.value

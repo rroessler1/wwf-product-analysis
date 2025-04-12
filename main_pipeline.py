@@ -16,6 +16,7 @@ from settings import NUMBER_OF_CHATGPT_VALIDATIONS
 import utils
 from utils import log_message
 from validation.validation_comparison import compare_validation
+import uuid
 
 
 SLEEP_TIME = 0  # TODO: test that we're not being rate limited using their API key
@@ -85,7 +86,9 @@ class Pipeline:
             )
         # For any images that were added individually
         if len(utils.get_all_image_paths(self.pdf_dir)) > 0:
-            self.process_directory(self.pdf_dir, self.pdf_dir)
+            self.process_directory(
+                self.pdf_dir, os.path.join(self.pdf_dir, f"images_{uuid.uuid4()}")
+            )
 
     def main(self) -> pd.DataFrame | None:
         self.leaflet_reader.download_leaflets(self.pdf_dir)

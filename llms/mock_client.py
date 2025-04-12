@@ -7,7 +7,9 @@ from .models import (
     CategorizationResult,
     GroceryProduct,
     ProductCategory,
-    ClassificationResponseFormat,
+    CategorizationResponseFormat,
+    ClassificationIsGrillResult,
+    ClassificationIsGrillResponseFormat,
 )
 
 
@@ -19,6 +21,9 @@ class MockLLM:
         self._client.validate_product_data = MagicMock(return_value=self._results())
         self._client.categorize_products = MagicMock(
             side_effect=self._categorization_results
+        )
+        self._client.classify_products_is_grill = MagicMock(
+            side_effect=self._categorization_grill_results
         )
         self._num_items_seen = 0
 
@@ -38,7 +43,9 @@ class MockLLM:
         )
         return Results(all_products=[p1, p2])
 
-    def _categorization_results(self, products: List[str]) -> ClassificationResponseFormat:
+    def _categorization_results(
+        self, products: List[str]
+    ) -> CategorizationResponseFormat:
         results = []
         for _ in products:
             results.append(
@@ -48,13 +55,25 @@ class MockLLM:
                     ],
                     certainty_fleischsorte=(self._num_items_seen % len(ProductCategory))
                     * 10,
+                )
+            )
+            self._num_items_seen += 1
+        return CategorizationResponseFormat(results=results)
+
+    def _categorization_grill_results(
+        self, products: List[str], system_prompt: str
+    ) -> ClassificationIsGrillResponseFormat:
+        results = []
+        for _ in products:
+            results.append(
+                ClassificationIsGrillResult(
                     is_grill=self._num_items_seen % 2,
                     certainty_is_grill=(self._num_items_seen % len(ProductCategory))
                     * 10,
                 )
             )
             self._num_items_seen += 1
-        return ClassificationResponseFormat(results=results)
+        return ClassificationIsGrillResponseFormat(results=results)
 
     def __getattr__(self, name):
         # Delegate attribute access to the MagicMock
