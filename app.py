@@ -1,7 +1,7 @@
 import streamlit as st
 
 from streamlit_pages.check_results_page import show_check_results_page
-from run_ui import show_run_page
+from streamlit_pages.run_pipeline_page import show_run_page
 from ui import texts
 
 # Set up the Streamlit page title
