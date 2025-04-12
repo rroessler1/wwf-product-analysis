@@ -103,9 +103,13 @@ def show_check_results_frame(data: pd.DataFrame) -> None:
             data, current_folder, current_page_number
         )
 
-        show_current_image(
-            os.path.join(PDF_FILES_DIR, current_folder), current_page_number
+        # Hack to handle individual images
+        current_folder = (
+            os.path.join(PDF_FILES_DIR, current_folder)
+            if current_folder != PDF_FILES_DIR
+            else PDF_FILES_DIR
         )
+        show_current_image(current_folder, current_page_number)
         show_edit_options(data, filtered_page_data, result_csv_path)
 
         show_mark_products_as_checked(
