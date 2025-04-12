@@ -2,6 +2,7 @@
 
 import os
 import streamlit as st
+from dotenv import load_dotenv
 
 from natsort import natsorted
 
@@ -12,9 +13,15 @@ def get_env_var(var_name: str) -> str:
     """
     Read an environment variable and raise an error if it's missing
     """
-    if var_name not in os.environ:
-        raise EnvironmentError(f"Missing required environment variable: {var_name}")
-    return os.environ[var_name]
+    try:
+        if var_name not in os.environ:
+            raise EnvironmentError(f"Missing required environment variable: {var_name}")
+        return os.environ[var_name]
+    except OSError:
+        load_dotenv()
+        if var_name not in os.environ:
+            raise EnvironmentError(f"Missing required environment variable: {var_name}")
+        return os.environ[var_name]
 
 
 def get_api_key() -> str:
