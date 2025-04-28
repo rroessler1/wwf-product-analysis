@@ -4,11 +4,17 @@ import logging
 from openai import OpenAI, RateLimitError
 
 from categorization.categorization_system_prompt import CATEGORIZATION_SYSTEM_PROMPT
-from categorization.categorization_user_prompt import CATEGORIZATION_USER_PROMPT, CLASSIFICATION_IS_GRILL_USER_PROMPT
+from categorization.categorization_user_prompt import (
+    CATEGORIZATION_USER_PROMPT,
+    CLASSIFICATION_IS_GRILL_USER_PROMPT,
+)
 from validation.validation_system_prompt import VALIDATION_SYSTEM_PROMPT
 from validation.validation_user_prompt import VALIDATION_USER_PROMPT
-from .models import Results,ClassificationIsGrillResponseFormat, \
-    CategorizationResponseFormat
+from .models import (
+    Results,
+    ClassificationIsGrillResponseFormat,
+    CategorizationResponseFormat,
+)
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -21,7 +27,8 @@ from typing import List
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MODEL = "gpt-4o-mini"
+IMAGE_MODEL = "gpt-4o"
+TEXT_MODEL = "gpt-4o-mini"
 NUM_RETRY_ATTEMPTS = 5
 RETRY_WAIT_IN_SECS = 60
 OPENAI_PROMPT = "You are a helpful assistant that will help me extract information from leaflets of various Swiss grocery stores. For every product in the image I upload, extract the following content: the name of the product, the original price, the discounted price, the percentage discount (if available), discount details (if available)."
@@ -56,7 +63,7 @@ class OpenAIClient:
         Results: Parsed structured data containing product information.
         """
         response = self.client.beta.chat.completions.parse(
-            model=MODEL,
+            model=IMAGE_MODEL,
             messages=[
                 {
                     "role": "user",
@@ -94,7 +101,7 @@ class OpenAIClient:
         """
 
         response = self.client.beta.chat.completions.parse(
-            model=MODEL,
+            model=TEXT_MODEL,
             messages=[
                 {"role": "system", "content": CATEGORIZATION_SYSTEM_PROMPT},
                 {
@@ -109,7 +116,9 @@ class OpenAIClient:
         # Extract and parse the response
         return response.choices[0].message.parsed
 
-    def classify_products_is_grill(self, products: List[str], system_prompt:str) -> ClassificationIsGrillResponseFormat:
+    def classify_products_is_grill(
+        self, products: List[str], system_prompt: str
+    ) -> ClassificationIsGrillResponseFormat:
         """
         Sends prompt to OpenAI to get product classification is_grill for products
         :param products: product data
@@ -118,12 +127,14 @@ class OpenAIClient:
         """
 
         response = self.client.beta.chat.completions.parse(
-            model=MODEL,
+            model=TEXT_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {
                     "role": "user",
-                    "content": self.build_product_classification_is_grill_prompt(products),
+                    "content": self.build_product_classification_is_grill_prompt(
+                        products
+                    ),
                 },
             ],
             response_format=ClassificationIsGrillResponseFormat,
@@ -132,7 +143,6 @@ class OpenAIClient:
 
         # Extract and parse the response
         return response.choices[0].message.parsed
-
 
     @staticmethod
     def build_product_categorization_prompt(products: List[str]) -> str:
@@ -155,7 +165,7 @@ class OpenAIClient:
     def validate_product_data(self, products: Results, image: bytes) -> Results:
         encoded_image = self._encode_image(image)
         response = self.client.beta.chat.completions.parse(
-            model=MODEL,
+            model=IMAGE_MODEL,
             messages=[
                 {"role": "system", "content": VALIDATION_SYSTEM_PROMPT},
                 {
