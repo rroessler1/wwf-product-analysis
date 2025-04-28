@@ -56,6 +56,20 @@ def get_filtered_page_data(
 def show_current_image(current_folder: str, current_page_number: int) -> None:
     # Load the image corresponding to the current folder and page number
     try:
+        sidebar_width = st.sidebar.number_input(
+            "Set sidebar width (as a %)", value=50.0, format="%0.0f", step=10.0
+        )
+        st.markdown(
+            f"""
+            <style>
+            [data-testid="stSidebar"] {{
+                width: {sidebar_width}% !important;
+                max-width: {sidebar_width}% !important;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         image_path = f"{current_folder}/{current_page_number}"
         image = Image.open(image_path)
         st.sidebar.image(
