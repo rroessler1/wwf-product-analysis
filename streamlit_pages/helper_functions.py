@@ -112,6 +112,15 @@ def edit_product_category(index: int, data: pd.DataFrame, storage_path: str) -> 
             st.success(f"Row {index + 1} updated successfully!")
 
 
+def display_parsed_value(value) -> str:
+    if pd.isna(value):
+        return ""
+    try:
+        return f"{value:.2f}"
+    except ValueError:
+        return value
+
+
 def edit_product_data(index: int, data: pd.DataFrame, storage_path: str) -> None:
     with st.form(key=f"form_{index}"):
         confidence = data.loc[index, "final_certainty"]
@@ -133,26 +142,32 @@ def edit_product_data(index: int, data: pd.DataFrame, storage_path: str) -> None
 
         col3, col4, col5 = st.columns(3)
         with col3:
-            original_price = st.number_input(
+            original_price = st.text_input(
                 "Original Price",
-                value=float(data.loc[index, "extracted_original_price"]),
-                format="%0.2f",
-                step=0.1,
+                value=display_parsed_value(data.loc[index, "extracted_original_price"]),
             )
         with col4:
-            discount_price = st.number_input(
+            discount_price = st.text_input(
                 "Discount Price",
-                value=float(data.loc[index, "extracted_discount_price"]),
-                format="%0.2f",
-                step=0.1,
+                value=display_parsed_value(data.loc[index, "extracted_discount_price"]),
             )
         with col5:
-            percentage_discount = st.number_input(
-                "Percentage Discount",
-                value=float(data.loc[index, "extracted_percentage_discount"]),
-                format="%0.0f",
-                step=1.0,
-            )
+            try:
+                percentage_discount = st.number_input(
+                    "Percentage Discount",
+                    value=float(data.loc[index, "extracted_percentage_discount"]),
+                    format="%0.0f",
+                    step=1.0,
+                )
+            except (ValueError, TypeError):
+                percentage_discount = st.text_input(
+                    "Percentage Discount",
+                    value=(
+                        ""
+                        if pd.isna(data.loc[index, "extracted_percentage_discount"])
+                        else data.loc[index, "extracted_percentage_discount"]
+                    ),
+                )
 
         # Button to save the changes for this row
         submitted = st.form_submit_button("Save Changes")
