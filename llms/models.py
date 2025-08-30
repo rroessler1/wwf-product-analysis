@@ -77,6 +77,7 @@ class CategorizationResult(BaseModel):
         float  # Certainty percentage for Fleischsorte classification (0-100)
     )
 
+
 class ClassificationIsGrillResult(BaseModel):
     is_grill: bool  # Whether the product is considered a grill product
     certainty_is_grill: (
@@ -86,6 +87,7 @@ class ClassificationIsGrillResult(BaseModel):
 
 class CategorizationResponseFormat(BaseModel):
     results: List[CategorizationResult]  # List of categorization results (max 5)
+
 
 class ClassificationIsGrillResponseFormat(BaseModel):
     results: List[ClassificationIsGrillResult]

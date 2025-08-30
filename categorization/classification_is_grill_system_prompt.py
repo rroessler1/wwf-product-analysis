@@ -45,7 +45,9 @@ If you encounter a product, determine if it is a grill product or not according 
 ---
 """
 
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEFLUEGEL = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEFLUEGEL = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """
  **Grillfleisch (Geflügel)**
    - **Beschreibung**: Grillfleisch (Geflügel) umfasst Fleischstücke von Geflügel, die sich speziell für das Grillen eignen und zum direkten Garen auf dem Grill gedacht sind. Im Fokus stehen Teile, die ohne aufwändige Vorbereitung sofort gegrillt werden können, wie z.B. Marinaden, und durch die Hitze des Grills außen knusprig und innen saftig werden.
 
@@ -61,7 +63,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEFLUEGEL = CLASSIFICATION_IS_GRILL_SYSTEM
     - Fleisch, das in Form von Geschnetzeltem oder Ragout vorliegt, da diese sich nicht direkt zum Grillen eignen.
     - Produkte wie Wienerli, Schinken, Trockenfleisch, Aufschnitt oder Salami sowie panierte oder fertig zubereitete Speisen wie Hackbraten oder Pulled Meat, die eher für andere Anwendungen vorgesehen sind.
 """
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_SCHWEIN = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """ 
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_SCHWEIN = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """ 
 **Grillfleisch (Schwein)**
    - **Beschreibung**: Grillfleisch (Schwein) umfasst speziell ausgesuchte Fleischstücke vom Schwein, die sich ideal für das direkte Grillen eignen und für eine sofortige Zubereitung auf dem Grill vorgesehen sind. Der Schwerpunkt liegt auf Fleischteilen, die entweder naturbelassen oder mariniert, durch die hohe Grillhitze außen knusprig und innen saftig werden und ein intensives Aroma entfalten.
 
@@ -78,7 +83,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_SCHWEIN = CLASSIFICATION_IS_GRILL_SYSTEM_P
     - Produkte wie Wienerli, Schinken, Trockenfleisch, Aufschnitt oder Salami, die nicht für den Grill bestimmt sind.
     - Paniertes Fleisch, das für die Grillzubereitung ungeeignet ist und eher gebraten wird.
     - Pulled Fleisch, welches bereits gegart und zerkleinert ist und nicht als Grillfleisch zählt."""
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_RIND = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """ **Grillfleisch (Rind)**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_RIND = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """ **Grillfleisch (Rind)**
    - **Beschreibung**: Grillfleisch (Rind) umfasst Fleischstücke vom Rind, die speziell für das Grillen geeignet sind und direkt auf dem Grill zubereitet werden können. Hierbei stehen besonders jene Teile im Vordergrund, die ohne aufwändige Vorbereitungen wie Marinieren oder Würzen sofort gegrillt werden können. Die Hitze des Grills sorgt dafür, dass das Fleisch außen eine aromatische Kruste entwickelt und innen saftig bleibt.
 
    **Inbegriffene Produkte**:
@@ -94,7 +102,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_RIND = CLASSIFICATION_IS_GRILL_SYSTEM_PROM
     - Wienerli, Schinken, Trockenfleisch, Aufschnitt oder Salami, die eher als Snack oder für andere Anwendungen vorgesehen sind.
     - Hackbraten und paniertes Fleisch, die nicht direkt für das Grillen gedacht sind.
     - Pulled Fleisch, das bereits gegart und zerkleinert ist und nicht zum Grillen geeignet ist."""
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMISCHT = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """ **Grillfleisch (Gemischt)**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMISCHT = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """ **Grillfleisch (Gemischt)**
    - **Beschreibung**: Grillfleisch (Gemischt) umfasst Fleischprodukte, die aus einer Kombination mehrerer Fleischsorten bestehen und zum Grillen geeignet sind. Der Fokus liegt auf Mischungen zwischen zum Beispiel Rind und Schwein.
 
    **Inbegriffene Produkte**:
@@ -107,7 +118,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMISCHT = CLASSIFICATION_IS_GRILL_SYSTEM_
     - Fleisch, das in Form von Geschnetzeltem, Ragout oder Hackfleisch vorliegt, da diese sich nicht direkt zum Grillen eignen.
     - Produkte wie Wienerli, Schinken, Trockenfleisch, Aufschnitt oder Salami sowie panierte oder fertig zubereitete Speisen wie Hackbraten oder Pulled Meat, die eher für andere Anwendungen vorgesehen sind.
 """
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_KAESE = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """**Käse**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_KAESE = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """**Käse**
    - **Beschreibung**: Grillkäse umfasst spezielle Käsesorten, die sich durch ihre feste Struktur und Hitzebeständigkeit ideal für das Grillen eignen, ohne dabei stark zu schmelzen oder ihre Form zu verlieren. Sie sind speziell für die direkte Zubereitung auf dem Grill konzipiert und entfalten dabei einen milden bis herzhaften Geschmack sowie eine außen knusprige und innen saftige Konsistenz.
 
    **Inbegriffene Produkte**:
@@ -120,7 +134,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_KAESE = CLASSIFICATION_IS_GRILL_SYSTEM_PRO
     - Schmelzkäse oder Käsezubereitungen, die eher für warme Speisen oder als Brotaufstrich gedacht sind und nicht für das Grillen geeignet sind.
     - Käseaufschnitt oder Frischkäse, da diese Sorten nicht für den Grill konzipiert sind und bei hohen Temperaturen nicht standhaft bleiben.
  """
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_FISCH = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """**Fisch & Meeresfrüchte**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_FISCH = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """**Fisch & Meeresfrüchte**
    - **Beschreibung**: Fisch & Meeresfrüchte zum Grillen umfasst speziell vorbereitete Fisch- und Meeresfrüchteprodukte, die für die direkte Zubereitung auf dem Grill vorgesehen sind und aufgrund ihrer Bezeichnung oder Darreichungsform klar als Grillprodukte erkennbar sind. Diese Produkte tragen entweder den Hinweis „Barbecue“ oder „Grillieren“ im Namen oder sind als Spieße für den Grill geeignet.
 
    **Inbegriffene Produkte**:
@@ -133,7 +150,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_FISCH = CLASSIFICATION_IS_GRILL_SYSTEM_PRO
     - Fischprodukte ohne spezielle Grillbezeichnung, wie zum Beispiel gewöhnliche Filets oder Meeresfrüchte ohne eindeutigen Hinweis auf Grillen oder Barbecue.
     - Räucherfisch oder eingelegte Meeresfrüchte, die typischerweise kalt oder bereits gegart konsumiert werden und nicht für den Grill geeignet sind.
     - Fisch in Dosen """
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_VEGAN = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """**Vegetarisches oder veganes Ersatzprodukt**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_VEGAN = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """**Vegetarisches oder veganes Ersatzprodukt**
    - **Beschreibung**: Vegetarische und vegane Ersatzprodukte zum Grillen umfassen speziell entwickelte pflanzliche Produkte, die als Grillprodukte gekennzeichnet sind und sich aufgrund ihrer Zusammensetzung und Struktur ideal für das Grillen eignen. Diese Produkte sind als Alternativen zu Fleisch auf pflanzlicher Basis konzipiert, um ein vergleichbares Grillerlebnis zu bieten und beim Grillen eine aromatische Kruste sowie eine saftige Konsistenz zu entwickeln.
 
    **Inbegriffene Produkte**:
@@ -146,7 +166,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_VEGAN = CLASSIFICATION_IS_GRILL_SYSTEM_PRO
    **Nicht inbegriffene Produkte**:
     - Paniertes Grillgut, das nicht als Grillprodukt gilt, da die Panade beim Grillen meist ungleichmäßig erhitzt wird oder verbrennen kann und eher für die Pfanne oder den Ofen geeignet ist.
  """
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMUESE = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """**Grillgemüse**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMUESE = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """**Grillgemüse**
    - **Beschreibung**: Grillgemüse umfasst speziell ausgewählte Gemüsesorten und -produkte, die als "Grillgemüse" gekennzeichnet sind oder als Grillspieße angeboten werden und sich optimal für die Zubereitung auf dem Grill eignen.
 
    **Inbegriffene Produkte**:
@@ -160,7 +183,10 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEMUESE = CLASSIFICATION_IS_GRILL_SYSTEM_P
     - Rohes Gemüse ohne Grillhinweis wie einzelne Zucchini, Paprika oder Maiskolben, die keine spezifische Eignung für das Grillen aufweisen.
 
  """
-CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS = CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL + """**OTHER**
+)
+CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS = (
+    CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GENERAL
+    + """**OTHER**
    - **Beschreibung**: Other umfasst grundsätzlich keine Grillprodukte, aber es gibt Ausnahmen. 
    
    **Keine Grillprodukte**:
@@ -173,9 +199,8 @@ CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_OTHERS = CLASSIFICATION_IS_GRILL_SYSTEM_PR
     **Ausnahmen (Grillprodukte)**:
     - In Ausnahmenfällen sind auch Fleischprodukte, die nicht Schwein, Geflügel oder Rind sind unter Other wie Lamm. Ist das Produkt grillbar, dann kann es trotzdem als Grillprodukt eingestuft werden.  
  
- """ # ask about e.g. "LAMM"
-
-
+ """
+)  # ask about e.g. "LAMM"
 
 
 CATEGORIZATION_SYSTEM_PROMPT_OLD = """
