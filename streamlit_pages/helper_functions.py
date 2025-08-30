@@ -345,39 +345,38 @@ def show_download(data: pd.DataFrame) -> None:
 def show_forward_backward_buttons(max_len: int, position: str) -> None:
     """
     Creates Previous and Next buttons for navigating through images.
-
-    Parameters:
-        max_len (int): the maximum length of images to show
-        position (str): the position of the button on the streamlit page, can't be the same twice so that the button keys are different
-
-    Effects:
-        Modifies st.session_state.current_page_index based on button interaction.
-
     """
-    st.divider()
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if (
-            st.button("Previous Image", key=f"Previous Image ({position})")
-            and st.session_state.current_page_index > 0
-        ):
+    def go_previous():
+        if st.session_state.current_page_index > 0:
             st.session_state.current_page_index -= 1
             st.session_state.missing_product_counter = 0
 
-    with col3:
-        if (
-            st.button("Next Image", key=f"Next Image ({position})")
-            and st.session_state.current_page_index < max_len - 1
-        ):
+    def go_next():
+        if st.session_state.current_page_index < max_len - 1:
             st.session_state.current_page_index += 1
             st.session_state.missing_product_counter = 0
-        elif st.session_state.current_page_index == max_len - 1:
+
+    st.divider()
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.button(
+            "Previous Image",
+            key=f"Previous Image ({position})",
+            on_click=go_previous,
+            disabled=st.session_state.current_page_index <= 0,
+        )
+
+    with col3:
+        if st.session_state.current_page_index == max_len - 1:
+            st.button("Next Image", key=f"Next Image ({position})", disabled=True)
             st.write("Last image reached!")
+        else:
+            st.button("Next Image", key=f"Next Image ({position})", on_click=go_next)
 
     with col2:
-        st.write(f"Current Image {st.session_state.current_page_index+1} / {max_len} ")
+        st.write(f"Current Image {st.session_state.current_page_index + 1} / {max_len}")
 
     if position == "Top":
         st.divider()
@@ -426,19 +425,8 @@ def get_mask_current_image(
     )
 
 
-def get_mask_max_llm_confidence(data: pd.DataFrame) -> pd.Series:
-    if isinstance(st.session_state.max_llm_confidence, int) & (
-        not st.session_state.include_checked_products
-    ):
-        return data["final_certainty"] <= st.session_state.max_llm_confidence
-    else:
-        return pd.Series([True] * len(data))
-
-
 def get_mask_core(data: pd.DataFrame) -> pd.Series:
-    return (
-        get_mask_bbq_products(data) | get_mask_non_bbq_products(data)
-    ) & get_mask_max_llm_confidence(data)
+    return get_mask_bbq_products(data) | get_mask_non_bbq_products(data)
 
 
 def get_mask_selection(data: pd.DataFrame) -> pd.Series:
