@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 
 from natsort import natsorted
 
-from settings import API_KEY_ENV_VAR_NAME
-
 
 def delete_directory_contents(directory: str):
     if directory.startswith("/") or ".." in directory:
@@ -39,7 +37,7 @@ def get_api_key() -> str:
     """
     Returns the API key
     """
-    return get_env_var(API_KEY_ENV_VAR_NAME)
+    return get_env_var("OPENAI_API_KEY")
 
 
 def get_all_image_paths(directory: str):

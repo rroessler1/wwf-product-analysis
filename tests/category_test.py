@@ -5,6 +5,7 @@ import pandas as pd
 import utils
 from categorization.product_categorizer import ProductCategorizer
 from llms.openai_client import OpenAIClient
+from settings import DEFAULT_SETTINGS
 
 TEST_DATA_DIR = "tests/data/"
 TEST_FILE = os.path.join(TEST_DATA_DIR, "category_test.csv")
@@ -16,7 +17,7 @@ def read_file() -> pd.DataFrame:
 
 def categorize(df: pd.DataFrame) -> pd.DataFrame:
     categorizer = ProductCategorizer()
-    openai_client = OpenAIClient(api_key=utils.get_api_key())
+    openai_client = OpenAIClient(user_settings=DEFAULT_SETTINGS)
     categorized_df = categorizer.categorize_products(df, openai_client)
     return categorized_df
 

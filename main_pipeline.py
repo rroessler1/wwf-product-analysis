@@ -27,6 +27,7 @@ class Pipeline:
         self,
         args: dict,
         leaflet_reader: LeafletReader,
+        user_settings: dict,
         pdf_dir: str = "pdf-files",
         display_mode: bool = False,
     ) -> None:
@@ -37,7 +38,7 @@ class Pipeline:
         self.openai_client = (
             MockLLM()
             if self.args["use_test_client"]
-            else OpenAIClient(api_key=utils.get_api_key())
+            else OpenAIClient(user_settings=user_settings)
         )
         self.result_saver = ResultSaver(
             overwrite_results=self.args["overwrite_results"]
@@ -135,7 +136,8 @@ class Pipeline:
 
         output_path = self.result_saver.save(extracted_df, output_dir)
         log_message(
-            f"Results from {directory} saved at: {output_path}", self.display_mode
+            "Text has been extracted from all images. Now categorizing...",
+            self.display_mode,
         )
 
         return self.categorize_results(directory, extracted_df, output_dir)
@@ -212,7 +214,7 @@ class Pipeline:
 
         output_path = self.result_saver.save(categorized_df, output_dir)
         log_message(
-            f"Categorized results from {directory} saved at: {output_path}",
+            "Categorization complete. Now saving all results...",
             self.display_mode,
         )
 
@@ -243,8 +245,11 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
+    from settings import DEFAULT_SETTINGS
+
     pipeline = Pipeline(
         args=parse_arguments(),
         leaflet_reader=LeafletReader(file_downloader=NoopDownloader()),
+        user_settings=DEFAULT_SETTINGS,
     )
     pipeline.main()

@@ -23,20 +23,20 @@ from tenacity import (
     before_sleep_log,
 )
 from typing import List
+import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-IMAGE_MODEL = "gpt-4o"
-TEXT_MODEL = "gpt-4o-mini"
 NUM_RETRY_ATTEMPTS = 5
 RETRY_WAIT_IN_SECS = 60
 OPENAI_PROMPT = "You are a helpful assistant that will help me extract information from leaflets of various Swiss grocery stores. For every product in the image I upload, extract the following content: the name of the product, the original price, the discounted price, the percentage discount (if available), discount details (if available)."
 
 
 class OpenAIClient:
-    def __init__(self, api_key: str):
-        self.client = OpenAI(api_key=api_key)
+    def __init__(self, user_settings: dict):
+        self.user_settings = user_settings
+        self.client = OpenAI(api_key=user_settings[settings.API_KEY_SETTING_KEY])
 
     def extract(self, image_data: bytes) -> Results:
         """
@@ -63,7 +63,7 @@ class OpenAIClient:
         Results: Parsed structured data containing product information.
         """
         response = self.client.beta.chat.completions.parse(
-            model=IMAGE_MODEL,
+            model=self.user_settings[settings.IMAGE_MODEL_SETTING_KEY],
             messages=[
                 {
                     "role": "user",
@@ -101,7 +101,7 @@ class OpenAIClient:
         """
 
         response = self.client.beta.chat.completions.parse(
-            model=TEXT_MODEL,
+            model=self.user_settings[settings.TEXT_MODEL_SETTING_KEY],
             messages=[
                 {"role": "system", "content": CATEGORIZATION_SYSTEM_PROMPT},
                 {
@@ -110,7 +110,6 @@ class OpenAIClient:
                 },
             ],
             response_format=CategorizationResponseFormat,
-            temperature=0.5,
         )
 
         # Extract and parse the response
@@ -127,7 +126,7 @@ class OpenAIClient:
         """
 
         response = self.client.beta.chat.completions.parse(
-            model=TEXT_MODEL,
+            model=self.user_settings[settings.TEXT_MODEL_SETTING_KEY],
             messages=[
                 {"role": "system", "content": system_prompt},
                 {
@@ -138,7 +137,6 @@ class OpenAIClient:
                 },
             ],
             response_format=ClassificationIsGrillResponseFormat,
-            temperature=0.5,
         )
 
         # Extract and parse the response
@@ -165,7 +163,7 @@ class OpenAIClient:
     def validate_product_data(self, products: Results, image: bytes) -> Results:
         encoded_image = self._encode_image(image)
         response = self.client.beta.chat.completions.parse(
-            model=IMAGE_MODEL,
+            model=self.user_settings[settings.IMAGE_MODEL_SETTING_KEY],
             messages=[
                 {"role": "system", "content": VALIDATION_SYSTEM_PROMPT},
                 {

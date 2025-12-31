@@ -15,7 +15,7 @@ from .models import (
 
 class MockLLM:
     def __init__(self):
-        self._client = OpenAIClient("fake-key")
+        self._client = OpenAIClient(user_settings={})
         self._client.extract = MagicMock(return_value=self._results())
         self._client.validate_product_data = MagicMock(return_value=self._results())
         self._client.validate_product_data = MagicMock(return_value=self._results())
