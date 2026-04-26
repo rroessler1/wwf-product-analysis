@@ -8,6 +8,7 @@ import pandas as pd
 from file_downloaders import NoopDownloader
 from leaflet_reader import LeafletReader
 from main_pipeline import Pipeline
+from settings import DEFAULT_SETTINGS
 
 TEST_DATA_DIR = "tests/data/"
 RESULTS_FILE = os.path.join(TEST_DATA_DIR, "items_per_page_expected_results.csv")
@@ -28,6 +29,7 @@ def get_image_results_df() -> pd.DataFrame:
     pipeline = Pipeline(
         args,
         leaflet_reader=LeafletReader(file_downloader=NoopDownloader()),
+        user_settings=DEFAULT_SETTINGS,
         pdf_dir=TEST_DATA_DIR,
         display_mode=False,
     )

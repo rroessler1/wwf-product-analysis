@@ -45,7 +45,7 @@ def show_check_results_page():
     check_result_columns(data, required_columns)
 
     st.write("### What do you want to check?")
-    col1, col2, col3 = st.columns(3)  # Adjust column width proportions as needed
+    col1, col2 = st.columns(2)  # Adjust column width proportions as needed
     with col1:
         st.session_state.bbq_products = st.checkbox(
             "BBQ products",
@@ -66,16 +66,6 @@ def show_check_results_page():
         )
         st.session_state.only_categories = st.checkbox(
             "Only Categories?", help=HELP_ONLY_CATEGORIES
-        )
-    with col3:
-        st.session_state.max_llm_confidence = st.slider(
-            "LLM confidence lower than: ",
-            min_value=0,
-            max_value=100,
-            value=100,
-            step=10,
-            on_change=reset_state_values,
-            help=HELP_LLM_CONFIDENCE,
         )
     show_check_results_frame(data)
 

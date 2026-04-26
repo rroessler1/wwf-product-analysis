@@ -14,7 +14,7 @@ from llms.mock_client import MockLLM
 from result_saver import ResultSaver
 from settings import NUMBER_OF_CHATGPT_VALIDATIONS
 import utils
-from utils import log_message
+from utils import log_message, run_parallel_batches_with_retry
 from validation.validation_comparison import compare_validation
 import uuid
 
@@ -27,6 +27,7 @@ class Pipeline:
         self,
         args: dict,
         leaflet_reader: LeafletReader,
+        user_settings: dict,
         pdf_dir: str = "pdf-files",
         display_mode: bool = False,
     ) -> None:
@@ -37,7 +38,7 @@ class Pipeline:
         self.openai_client = (
             MockLLM()
             if self.args["use_test_client"]
-            else OpenAIClient(api_key=utils.get_api_key())
+            else OpenAIClient(user_settings=user_settings)
         )
         self.result_saver = ResultSaver(
             overwrite_results=self.args["overwrite_results"]
@@ -111,20 +112,40 @@ class Pipeline:
         image_paths = utils.get_all_image_paths(directory)
         all_products = []
         all_validation_results = [[] for _ in range(NUMBER_OF_CHATGPT_VALIDATIONS)]
+        progress_bar = None
 
         if self.display_mode:
             progress_bar = st.progress(0)
 
-        # Process images and extract data
-        for index, image_path in enumerate(image_paths):
-            extracted_products, validation_results = self.process_image(image_path)
+        image_jobs = [
+            {
+                "batch_id": f"img-{index:06d}",
+                "index": index,
+                "image_path": image_path,
+            }
+            for index, image_path in enumerate(image_paths)
+        ]
+
+        completed_jobs = 0
+
+        def update_progress():
+            nonlocal completed_jobs
+            completed_jobs += 1
+            if self.display_mode and progress_bar is not None and len(image_paths) > 0:
+                progress_bar.progress(completed_jobs / len(image_paths))
+
+        image_results = run_parallel_batches_with_retry(
+            batch_jobs=image_jobs,
+            call_fn=lambda job: self.process_image(job["image_path"]),
+            progress_callback=update_progress,
+        )
+
+        for job in image_jobs:
+            extracted_products, validation_results = image_results[job["batch_id"]]
             all_products.extend(extracted_products)
 
             for i in range(NUMBER_OF_CHATGPT_VALIDATIONS):
                 all_validation_results[i].extend(validation_results[i])
-
-            if self.display_mode:
-                progress_bar.progress((index + 1) / len(image_paths))
 
         extracted_df = self.create_results_dataframe(
             all_products, all_validation_results
@@ -135,7 +156,8 @@ class Pipeline:
 
         output_path = self.result_saver.save(extracted_df, output_dir)
         log_message(
-            f"Results from {directory} saved at: {output_path}", self.display_mode
+            "Text has been extracted from all images. Now categorizing...",
+            self.display_mode,
         )
 
         return self.categorize_results(directory, extracted_df, output_dir)
@@ -212,7 +234,7 @@ class Pipeline:
 
         output_path = self.result_saver.save(categorized_df, output_dir)
         log_message(
-            f"Categorized results from {directory} saved at: {output_path}",
+            "Categorization complete. Now saving all results...",
             self.display_mode,
         )
 
@@ -243,8 +265,11 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
+    from settings import DEFAULT_SETTINGS
+
     pipeline = Pipeline(
         args=parse_arguments(),
         leaflet_reader=LeafletReader(file_downloader=NoopDownloader()),
+        user_settings=DEFAULT_SETTINGS,
     )
     pipeline.main()

@@ -3,6 +3,7 @@
 import pandas as pd
 from collections import defaultdict
 
+
 from categorization.classification_is_grill_system_prompt import (
     CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_GEFLUEGEL,
     CLASSIFICATION_IS_GRILL_SYSTEM_PROMPT_SCHWEIN,
@@ -16,10 +17,13 @@ from categorization.classification_is_grill_system_prompt import (
 )
 from llms.models import ProductCategory, FinalProductCategory
 from llms.openai_client import OpenAIClient
-from utils import get_api_key
+from typing import Any, cast
+
+from utils import run_parallel_batches_with_retry
 
 
 class ProductCategorizer:
+
     def __init__(self):
         self.categorization_columns = []
 
@@ -92,24 +96,43 @@ class ProductCategorizer:
         product_names = list(data["extracted_product_name"])
         step_size = 5
 
-        # Step 1: Batch categorization using OpenAI API for the product category.
-        product_categories: list[ProductCategory] = []
-        for i in range(0, len(product_names), step_size):
-            categorization_results = openai_client.categorize_products(
-                product_names[i : i + step_size]
+        # Step 1: Categorize in parallel with deterministic batch IDs and 429 retry.
+        category_batch_jobs = []
+        for batch_number, i in enumerate(range(0, len(product_names), step_size)):
+            names = product_names[i : i + step_size]
+            category_batch_jobs.append(
+                {
+                    "batch_id": f"cat-{batch_number:06d}",
+                    "indices": list(range(i, i + len(names))),
+                    "names": names,
+                }
             )
-            product_categories.extend(categorization_results)
 
-        # Build a list of category results from OpenAI responses.
-        category_results = []
-        for _, results in product_categories:
-            for result in results:
-                category_results.append(
-                    {
-                        "category": result.fleischsorte.value,  # string representation of the category
-                        "certainty_fleischsorte": result.certainty_fleischsorte,
-                    }
+        def categorize_batch(job: dict):
+            response = openai_client.categorize_products(job["names"])
+            if len(response.results) != len(job["indices"]):
+                raise ValueError(
+                    f"Batch {job['batch_id']} returned {len(response.results)} "
+                    f"results for {len(job['indices'])} inputs"
                 )
+            return response.results
+
+        categorized_batches = run_parallel_batches_with_retry(
+            category_batch_jobs,
+            categorize_batch,
+        )
+
+        category_results: list[dict[str, Any] | None] = [None] * len(product_names)
+        for job in category_batch_jobs:
+            batch_results = cast(list, categorized_batches[job["batch_id"]])
+            for idx, result in zip(job["indices"], batch_results):
+                category_results[idx] = {
+                    "category": result.fleischsorte.value,
+                    "certainty_fleischsorte": result.certainty_fleischsorte,
+                }
+
+        if any(cat_info is None for cat_info in category_results):
+            raise RuntimeError("Some category results are missing after categorization")
 
         # Check that the number of category results matches the input data.
         if len(data.index) != len(category_results):
@@ -122,24 +145,48 @@ class ProductCategorizer:
         category_groups = defaultdict(list)
         # Build groups: key = category, value = list of tuples (index, product_name)
         for idx, cat_info in enumerate(category_results):
+            if cat_info is None:
+                raise RuntimeError(f"Category result missing at index {idx}")
             category = cat_info["category"]
             category_groups[category].append((idx, product_names[idx]))
 
-        # Process each group in batches of up to 5 products.
-        for category, items in category_groups.items():
+        grill_batch_jobs = []
+        for batch_number, (category, items) in enumerate(category_groups.items()):
             for i in range(0, len(items), step_size):
                 batch = items[i : i + step_size]
                 indices, names = zip(*batch)
-                # Call the placeholder function for the batch.
-                batch_results = self.classify_is_grill_batch(
-                    list(names), category, openai_client
+                grill_batch_jobs.append(
+                    {
+                        "batch_id": f"grill-{batch_number:06d}-{i:06d}",
+                        "category": category,
+                        "indices": list(indices),
+                        "names": list(names),
+                    }
                 )
-                # Assign the results back to the corresponding positions.
-                for idx_item, result in zip(indices, batch_results):
-                    category_results[idx_item]["is_grill"] = result["is_grill"]
-                    category_results[idx_item]["certainty_is_grill"] = result[
-                        "certainty_is_grill"
-                    ]
+
+        def classify_is_grill(job: dict):
+            batch_results = self.classify_is_grill_batch(
+                job["names"], job["category"], openai_client
+            )
+            if len(batch_results) != len(job["indices"]):
+                raise ValueError(
+                    f"Batch {job['batch_id']} returned {len(batch_results)} "
+                    f"results for {len(job['indices'])} inputs"
+                )
+            return batch_results
+
+        grill_batches = run_parallel_batches_with_retry(
+            grill_batch_jobs,
+            classify_is_grill,
+        )
+
+        for job in grill_batch_jobs:
+            batch_results = cast(list, grill_batches[job["batch_id"]])
+            for idx_item, result in zip(job["indices"], batch_results):
+                category_results[idx_item]["is_grill"] = result["is_grill"]
+                category_results[idx_item]["certainty_is_grill"] = result[
+                    "certainty_is_grill"
+                ]
 
         # Merge the results with the original DataFrame.
         res_df = pd.DataFrame(category_results)
@@ -164,7 +211,7 @@ class ProductCategorizer:
     @staticmethod
     def convert_two_column_categorization_to_one_column_categorization(
         row: pd.Series,
-    ) -> FinalProductCategory:
+    ) -> str:
         if (not row["is_grill"]) or row["category"] == ProductCategory.OTHERS.value:
             return FinalProductCategory.NO_GRILL_PRODUCT.value
         else:

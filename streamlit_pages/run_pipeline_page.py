@@ -14,12 +14,13 @@ def run_pipeline(zipfile):
     pipeline = Pipeline(
         args,
         leaflet_reader=LeafletReader(StreamlitDownloader(zipfile)),
+        user_settings=st.session_state.settings,
         pdf_dir=PDF_FILES_DIR,
         display_mode=True,
     )
 
     st.session_state["results"] = pipeline.main()
-    st.write("Processing finished")
+    st.write("Processing Finished!")
 
 
 # Streamlit UI
